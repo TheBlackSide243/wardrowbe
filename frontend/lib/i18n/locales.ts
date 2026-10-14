@@ -40,6 +40,8 @@ export const NAMESPACES = [
   'outfits',
   'constants',
   'errors',
+  'packing',
+  'declutter',
 ] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];

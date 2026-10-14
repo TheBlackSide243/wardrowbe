@@ -15,6 +15,8 @@ import {
   Users,
   Bell,
   HeartHandshake,
+  Luggage,
+  Recycle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -33,6 +35,8 @@ export function Sidebar() {
     { name: t('familyFeed'), href: '/dashboard/family/feed', icon: HeartHandshake },
     { name: t('analytics'), href: '/dashboard/analytics', icon: BarChart3 },
     { name: t('aiLearning'), href: '/dashboard/learning', icon: Brain },
+    { name: t('packing'), href: '/dashboard/packing', icon: Luggage },
+    { name: t('declutter'), href: '/dashboard/declutter', icon: Recycle },
   ];
 
   const secondaryNavigation = [
