@@ -51,6 +51,11 @@ ROLE_ORDER = (
     "accessory",
 )
 COLD_ACCESSORY_TYPES = {"scarf", "hat"}
+# Nice to have, not a gap: a wardrobe without dresses or scarves is not missing anything.
+OPTIONAL_ROLES = {"mid_layer", "full_body", "accessory"}
+# WMO codes for drizzle, rain, showers and thunderstorms: a day forecast as rain counts as rainy
+# even when the reported chance is at or under RAIN_DAY_CHANCE.
+WET_CODES = set(range(51, 68)) | {80, 81, 82, 95, 96, 99}
 
 
 @dataclass
@@ -73,6 +78,10 @@ def trip_length(start: date, end: date) -> int:
     return (end - start).days + 1
 
 
+def is_wet(day: DailyForecast) -> bool:
+    return day.precipitation_chance > RAIN_DAY_CHANCE or day.condition_code in WET_CODES
+
+
 def summarize_forecast(
     forecast: list[DailyForecast], start: date, end: date, season: str
 ) -> TripWeather:
@@ -85,7 +94,7 @@ def summarize_forecast(
     return TripWeather(
         temp_min=min(d.temp_min for d in in_trip),
         temp_max=max(d.temp_max for d in in_trip),
-        rain_days=sum(1 for d in in_trip if d.precipitation_chance > RAIN_DAY_CHANCE),
+        rain_days=sum(1 for d in in_trip if is_wet(d)),
         estimated=False,
         days=in_trip,
     )
@@ -188,6 +197,8 @@ def choose_items(
         if needed <= 0:
             continue
         ranked = sorted(by_role[role], key=lambda pair: pair[0], reverse=True)
+        if not ranked and role in OPTIONAL_ROLES:
+            continue
         groups.append(PackingGroup(role=role, needed=needed, items=[i for _, i in ranked[:needed]]))
     return groups
 

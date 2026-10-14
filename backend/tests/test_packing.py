@@ -53,6 +53,18 @@ class TestSummarizeForecast:
         assert weather.estimated is False
         assert len(weather.days) == 2
 
+    def test_light_rain_counts_even_at_a_low_chance(self):
+        start = date(2026, 3, 10)
+        drizzle = DailyForecast(
+            date=start.isoformat(),
+            temp_min=8,
+            temp_max=14,
+            precipitation_chance=30,
+            condition="light rain",
+            condition_code=61,
+        )
+        assert summarize_forecast([drizzle], start, start, "spring").rain_days == 1
+
     def test_falls_back_to_the_season_beyond_the_forecast(self):
         weather = summarize_forecast([], date(2026, 7, 1), date(2026, 7, 5), "summer")
         assert weather.estimated is True
@@ -107,6 +119,20 @@ class TestChooseItems:
         assert by_role["outer_layer"].items == [coat]
         assert shorts not in by_role["bottom"].items
         assert jeans in by_role["bottom"].items
+
+    def test_optional_roles_without_items_are_not_gaps(self):
+        weather = TripWeather(temp_min=15, temp_max=22, rain_days=0, estimated=False)
+        groups = choose_items(
+            [_item("t-shirt")],
+            {"base_top": 1, "full_body": 1, "footwear": 1},
+            weather,
+            "spring",
+            "casual",
+            None,
+        )
+        roles = {g.role: g for g in groups}
+        assert "full_body" not in roles
+        assert roles["footwear"].items == []
 
     def test_keeps_role_order_and_skips_roles_not_needed(self):
         weather = TripWeather(temp_min=15, temp_max=22, rain_days=0, estimated=False)
