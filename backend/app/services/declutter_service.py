@@ -5,12 +5,14 @@ again; giving it away goes through the normal archive."""
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy import and_, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.item import ClothingItem, ItemStatus
+from app.models.item import ClothingItem, DeclutterKeep, ItemStatus
 from app.models.user import User
 
 DEFAULT_MONTHS = 6
@@ -35,12 +37,17 @@ def idle_since(item: ClothingItem) -> date | None:
 
 
 def find_candidates(
-    items: list[ClothingItem], today: date, months: int
+    items: list[ClothingItem],
+    today: date,
+    months: int,
+    kept_until: dict[UUID, date] | None = None,
 ) -> list[DeclutterCandidate]:
     cutoff = today - timedelta(days=months * DAYS_PER_MONTH)
+    kept_until = kept_until or {}
     candidates = []
     for item in items:
-        if item.declutter_kept_until and item.declutter_kept_until > today:
+        keep = kept_until.get(item.id)
+        if keep and keep > today:
             continue
         since = idle_since(item)
         if since is None or since > cutoff:
@@ -75,6 +82,21 @@ class DeclutterService:
         )
         return list(result.scalars().all())
 
-    async def keep(self, item: ClothingItem, today: date, months: int) -> None:
-        item.declutter_kept_until = today + timedelta(days=months * DAYS_PER_MONTH)
+    async def kept_until(self, user: User) -> dict[UUID, date]:
+        rows = await self.db.execute(
+            select(DeclutterKeep.item_id, DeclutterKeep.kept_until)
+            .join(ClothingItem, ClothingItem.id == DeclutterKeep.item_id)
+            .where(ClothingItem.user_id == user.id)
+        )
+        return dict(rows.tuples().all())
+
+    async def keep(self, item: ClothingItem, today: date, months: int) -> date:
+        until = today + timedelta(days=months * DAYS_PER_MONTH)
+        statement = insert(DeclutterKeep).values(item_id=item.id, kept_until=until)
+        await self.db.execute(
+            statement.on_conflict_do_update(
+                index_elements=[DeclutterKeep.item_id], set_={"kept_until": until}
+            )
+        )
         await self.db.flush()
+        return until

@@ -52,8 +52,11 @@ async def declutter_review(
     current_user: Annotated[User, Depends(get_current_user)],
     months: int = Query(DEFAULT_MONTHS, ge=MIN_MONTHS, le=MAX_MONTHS),
 ) -> DeclutterResponse:
-    items = await DeclutterService(db).active_items(current_user)
-    candidates = find_candidates(items, get_user_today(current_user), months)
+    service = DeclutterService(db)
+    items = await service.active_items(current_user)
+    candidates = find_candidates(
+        items, get_user_today(current_user), months, await service.kept_until(current_user)
+    )
     return DeclutterResponse(
         months=months,
         total_items=len(items),
@@ -77,5 +80,5 @@ async def keep_item(
     item = await ItemService(db).get_by_id(item_id, current_user.id)
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-    await DeclutterService(db).keep(item, get_user_today(current_user), request.months)
-    return KeepResponse(item_id=item.id, kept_until=item.declutter_kept_until)
+    until = await DeclutterService(db).keep(item, get_user_today(current_user), request.months)
+    return KeepResponse(item_id=item.id, kept_until=until)

@@ -42,9 +42,10 @@ class TestFindCandidates:
         assert result[1].idle_days == 300
 
     def test_kept_items_wait_until_their_date(self):
-        kept = _item(created_days_ago=400, declutter_kept_until=TODAY + timedelta(days=30))
-        expired = _item(created_days_ago=400, declutter_kept_until=TODAY - timedelta(days=1))
-        assert [c.item for c in find_candidates([kept, expired], TODAY, 6)] == [expired]
+        kept = _item(created_days_ago=400)
+        expired = _item(created_days_ago=400)
+        until = {kept.id: TODAY + timedelta(days=30), expired.id: TODAY - timedelta(days=1)}
+        assert [c.item for c in find_candidates([kept, expired], TODAY, 6, until)] == [expired]
 
     def test_shorter_window_finds_more(self):
         item = _item(created_days_ago=400, last_worn_days_ago=100)
@@ -95,6 +96,13 @@ class TestDeclutterApi:
 
         again = await client.get("/api/v1/declutter?months=6", headers=auth_headers)
         assert again.json()["candidates"] == []
+
+        # Keeping twice moves the date instead of failing on the existing row.
+        twice = await client.post(
+            f"/api/v1/declutter/{old.id}/keep", json={"months": 12}, headers=auth_headers
+        )
+        assert twice.status_code == 200, twice.json()
+        assert twice.json()["kept_until"] > keep.json()["kept_until"]
 
     @pytest.mark.asyncio
     async def test_cannot_keep_someone_elses_item(self, client: AsyncClient, auth_headers):
