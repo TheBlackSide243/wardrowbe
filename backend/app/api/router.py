@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.ai_status import router as ai_status_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.declutter import router as declutter_router
@@ -16,8 +17,10 @@ from app.api.outfits import router as outfits_router
 from app.api.packing import router as packing_router
 from app.api.pairings import router as pairings_router
 from app.api.preferences import router as preferences_router
+from app.api.selfie import router as selfie_router
 from app.api.users import router as users_router
 from app.api.weather import router as weather_router
+from app.api.wishlist import router as wishlist_router
 
 api_router = APIRouter()
 
@@ -38,3 +41,6 @@ api_router.include_router(analytics_router)
 api_router.include_router(learning_router)
 api_router.include_router(packing_router)
 api_router.include_router(declutter_router)
+api_router.include_router(wishlist_router)
+api_router.include_router(selfie_router)
+api_router.include_router(ai_status_router)

@@ -13,6 +13,7 @@ from app.models.preference import UserPreference
 from app.models.schedule import Schedule
 from app.models.user import User
 from app.models.webauthn import WebAuthnCredential
+from app.models.wishlist import WishlistItem
 
 __all__ = [
     "Family",
@@ -37,4 +38,5 @@ __all__ = [
     "UserFeedback",
     "Notification",
     "WebAuthnCredential",
+    "WishlistItem",
 ]
