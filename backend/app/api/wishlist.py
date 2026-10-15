@@ -16,6 +16,7 @@ from app.models.user import User
 from app.models.wishlist import DEFAULT_PRIORITY, WishlistItem
 from app.services.image_service import ImageService
 from app.services.link_preview import PreviewError, fetch_preview, validate_url
+from app.services.price_watch import check_prices
 from app.utils.auth import get_current_user
 from app.utils.garment_vocabulary import ITEM_ROLE, TYPES
 from app.utils.signed_urls import sign_optional
@@ -110,6 +111,9 @@ class WishlistResponse(BaseModel):
     item_type: str | None
     priority: int
     bought: bool
+    current_price: Decimal | None = None
+    price_checked_at: datetime | None = None
+    price_dropped_at: datetime | None = None
     created_at: datetime
 
     @computed_field
@@ -243,6 +247,34 @@ async def preview_link(
     except PreviewError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
     return PreviewResponse(**preview.__dict__)
+
+
+# A button press reads the shops while the page waits, so it covers a handful at a time.
+MANUAL_CHECK_LIMIT = 15
+
+
+@router.post("/check-prices", response_model=list[WishlistResponse])
+async def check_prices_now(
+    db: DbSession, current_user: Annotated[User, Depends(get_current_user)]
+) -> list[WishlistResponse]:
+    entries = list(
+        (
+            await db.scalars(
+                select(WishlistItem)
+                .where(
+                    WishlistItem.user_id == current_user.id,
+                    WishlistItem.link.is_not(None),
+                    WishlistItem.bought.is_(False),
+                )
+                .order_by(WishlistItem.price_checked_at.nulls_first())
+                .limit(MANUAL_CHECK_LIMIT)
+            )
+        ).all()
+    )
+    await check_prices(db, entries, pause=0.3)
+    for entry in entries:
+        await db.refresh(entry)
+    return [WishlistResponse.model_validate(e) for e in entries]
 
 
 @router.get("/suggestions", response_model=list[Suggestion])

@@ -33,6 +33,11 @@ class WishlistItem(Base):
     item_type: Mapped[str | None] = mapped_column(String(50))
     priority: Mapped[int] = mapped_column(Integer, default=DEFAULT_PRIORITY, nullable=False)
     bought: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Price watch: the shop's latest price, when it was read, and when it last went down
+    # compared with `price` (the price the user noted).
+    current_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    price_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    price_dropped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

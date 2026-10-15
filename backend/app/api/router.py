@@ -17,7 +17,9 @@ from app.api.outfits import router as outfits_router
 from app.api.packing import router as packing_router
 from app.api.pairings import router as pairings_router
 from app.api.preferences import router as preferences_router
+from app.api.season_swap import router as season_swap_router
 from app.api.selfie import router as selfie_router
+from app.api.stylist import router as stylist_router
 from app.api.users import router as users_router
 from app.api.weather import router as weather_router
 from app.api.wishlist import router as wishlist_router
@@ -44,3 +46,5 @@ api_router.include_router(declutter_router)
 api_router.include_router(wishlist_router)
 api_router.include_router(selfie_router)
 api_router.include_router(ai_status_router)
+api_router.include_router(season_swap_router)
+api_router.include_router(stylist_router)
