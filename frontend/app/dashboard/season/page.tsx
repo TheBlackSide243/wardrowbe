@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSeasonSwap, type SwapEntry } from '@/lib/hooks/use-season-stylist';
+import { useSeasonSwap, type SwapEntry } from '@/lib/hooks/use-season-swap';
 import { useSeasonLabel, useTypeLabel } from '@/lib/hooks/use-translated-constants';
 
 const DONE_KEY = 'wardrowbe.seasonSwapDone';

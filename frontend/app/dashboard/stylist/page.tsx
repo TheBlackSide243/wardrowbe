@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ApiError } from '@/lib/api';
-import { useStylist, type StylistTurn } from '@/lib/hooks/use-season-stylist';
+import { useStylist, type StylistTurn } from '@/lib/hooks/use-stylist';
 import { useTypeLabel } from '@/lib/hooks/use-translated-constants';
 import type { Item } from '@/lib/types';
 

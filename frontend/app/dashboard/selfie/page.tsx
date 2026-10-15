@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ACCEPTED_IMAGE_INPUT } from '@/lib/image-types';
 import { ApiError } from '@/lib/api';
 import { useLogWear } from '@/lib/hooks/use-items';
-import { useSelfieRecognition } from '@/lib/hooks/use-wishlist';
+import { useSelfieRecognition } from '@/lib/hooks/use-selfie';
 import { useTypeLabel } from '@/lib/hooks/use-translated-constants';
 
 export default function SelfiePage() {

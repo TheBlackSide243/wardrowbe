@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { api, API_BASE_PATH, ApiError, getAccessToken } from '@/lib/api';
 import { applySessionToken, useSetTokenIfAvailable } from '@/lib/hooks/use-session-token';
 import { queryKeys } from '@/lib/hooks/query-keys';
-import type { Item } from '@/lib/types';
 
 export interface WishlistEntry {
   id: string;
@@ -48,11 +47,6 @@ export interface WardrobeGap {
   role: string;
   have: number;
   target: number;
-}
-
-export interface SelfieResult {
-  matches: Item[];
-  considered: number;
 }
 
 export function useWishlist() {
@@ -103,7 +97,7 @@ export function useDeleteWishlistEntry() {
   return useWishlistMutation((id: string) => api.delete<void>(`/wishlist/${id}`));
 }
 
-async function sendForm<T>(path: string, method: 'PUT' | 'POST', file: File, token?: string | null) {
+async function sendForm<T>(path: string, method: 'PUT', file: File, token?: string | null) {
   const formData = new FormData();
   formData.append('image', file);
   const headers: Record<string, string> = {};
@@ -147,10 +141,6 @@ export function useLinkPreview() {
   });
 }
 
-export function useSelfieRecognition() {
-  const { data: session } = useSession();
-  return useMutation({
-    mutationFn: (file: File) =>
-      sendForm<SelfieResult>('/selfie', 'POST', file, session?.accessToken || getAccessToken()),
-  });
+export function useCheckPrices() {
+  return useWishlistMutation(() => api.post<WishlistEntry[]>('/wishlist/check-prices'));
 }

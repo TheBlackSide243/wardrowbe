@@ -28,6 +28,7 @@ import { ACCEPTED_IMAGE_INPUT } from '@/lib/image-types';
 import { ApiError, getErrorMessage } from '@/lib/api';
 import {
   useAddWishlistEntry,
+  useCheckPrices,
   useDeleteWishlistEntry,
   useLinkPreview,
   useUpdateWishlistEntry,
@@ -36,7 +37,6 @@ import {
   useWishlistSuggestions,
   type WishlistEntry,
 } from '@/lib/hooks/use-wishlist';
-import { useCheckPrices } from '@/lib/hooks/use-season-stylist';
 import { useClothingTypes, useRoleLabel, useTypeLabel } from '@/lib/hooks/use-translated-constants';
 
 const NO_TYPE = 'none';
