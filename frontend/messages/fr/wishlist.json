@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {À acheter} one {À acheter · # article} other {À acheter · # articles}}",
     "total": "Environ {total} au total"
   },
+  "price": {
+    "check": "Vérifier les prix",
+    "dropped": "Prix en baisse",
+    "foundDrops": "{count, plural, one {# prix a baissé} other {# prix ont baissé}}",
+    "noDrops": "Aucune baisse de prix pour l'instant"
+  },
   "priority": {
     "1": "Indispensable",
     "2": "Envie",

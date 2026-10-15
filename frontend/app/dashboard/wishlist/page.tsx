@@ -10,8 +10,10 @@ import {
   Link2,
   Loader2,
   Plus,
+  RefreshCw,
   ShoppingBag,
   Trash2,
+  TrendingDown,
   Undo2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +36,7 @@ import {
   useWishlistSuggestions,
   type WishlistEntry,
 } from '@/lib/hooks/use-wishlist';
+import { useCheckPrices } from '@/lib/hooks/use-season-stylist';
 import { useClothingTypes, useRoleLabel, useTypeLabel } from '@/lib/hooks/use-translated-constants';
 
 const NO_TYPE = 'none';
@@ -53,6 +56,7 @@ function EntryCard({ entry }: { entry: WishlistEntry }) {
   const upload = useUploadWishlistPhoto();
   const fileInput = useRef<HTMLInputElement>(null);
   const price = money(locale, entry.price);
+  const dropped = entry.price_dropped_at && entry.current_price ? money(locale, entry.current_price) : null;
   const fail = (error: unknown) => toast.error(getErrorMessage(error, t('error')));
 
   return (
@@ -79,8 +83,21 @@ function EntryCard({ entry }: { entry: WishlistEntry }) {
         <div className="space-y-1">
           <div className="flex items-start justify-between gap-2">
             <span className="font-medium leading-tight">{entry.name}</span>
-            {price && <span className="shrink-0 text-sm font-semibold">{price}</span>}
+            {dropped ? (
+              <span className="shrink-0 text-right text-sm">
+                <span className="font-semibold text-green-600">{dropped}</span>{' '}
+                <span className="text-xs text-muted-foreground line-through">{price}</span>
+              </span>
+            ) : (
+              price && <span className="shrink-0 text-sm font-semibold">{price}</span>
+            )}
           </div>
+          {dropped && (
+            <Badge className="gap-1 bg-green-600 hover:bg-green-600">
+              <TrendingDown className="h-3 w-3" />
+              {t('price.dropped')}
+            </Badge>
+          )}
           {entry.item_type && (
             <div className="text-xs text-muted-foreground">{typeLabel(entry.item_type)}</div>
           )}
@@ -310,6 +327,7 @@ export default function WishlistPage() {
   const roleLabel = useRoleLabel();
   const { data, isLoading } = useWishlist();
   const { data: gaps } = useWishlistSuggestions();
+  const checkPrices = useCheckPrices();
   const [prefill, setPrefill] = useState({ key: 0, name: '' });
 
   const open = (data ?? []).filter((e) => !e.bought);
@@ -364,11 +382,36 @@ export default function WishlistPage() {
         <>
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold">{t('list.title', { count: open.length })}</h2>
-            {total > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {t('list.total', { total: money(locale, String(total)) ?? '' })}
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {total > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {t('list.total', { total: money(locale, String(total)) ?? '' })}
+                </span>
+              )}
+              {open.some((e) => e.link) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={checkPrices.isPending}
+                  onClick={() =>
+                    checkPrices.mutate(undefined, {
+                      onSuccess: (entries) => {
+                        const drops = entries.filter((e) => e.price_dropped_at).length;
+                        toast.success(drops ? t('price.foundDrops', { count: drops }) : t('price.noDrops'));
+                      },
+                      onError: () => toast.error(t('error')),
+                    })
+                  }
+                >
+                  {checkPrices.isPending ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1 h-3 w-3" />
+                  )}
+                  {t('price.check')}
+                </Button>
+              )}
+            </div>
           </div>
           {open.length === 0 ? (
             <p className="py-6 text-center text-muted-foreground">{t('list.empty')}</p>

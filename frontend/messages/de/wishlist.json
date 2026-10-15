@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {Zu kaufen} one {Zu kaufen · # Teil} other {Zu kaufen · # Teile}}",
     "total": "Etwa {total} insgesamt"
   },
+  "price": {
+    "check": "Preise prüfen",
+    "dropped": "Preis gesunken",
+    "foundDrops": "{count, plural, one {# Preis ist gesunken} other {# Preise sind gesunken}}",
+    "noDrops": "Bisher keine Preissenkungen"
+  },
   "priority": {
     "1": "Brauche ich",
     "2": "Hätte ich gern",

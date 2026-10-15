@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {To buy} one {To buy · # item} other {To buy · # items}}",
     "total": "About {total} in all"
   },
+  "price": {
+    "check": "Check prices",
+    "dropped": "Price drop",
+    "foundDrops": "{count, plural, one {# price went down} other {# prices went down}}",
+    "noDrops": "No price drops for now"
+  },
   "priority": {
     "1": "Must have",
     "2": "Would like",

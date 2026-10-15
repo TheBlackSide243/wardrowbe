@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {買うもの} other {買うもの · #点}}",
     "total": "合計 約{total}"
   },
+  "price": {
+    "check": "価格を確認",
+    "dropped": "値下がり",
+    "foundDrops": "{count, plural, other {#件が値下がりしました}}",
+    "noDrops": "今のところ値下がりはありません"
+  },
   "priority": {
     "1": "必要",
     "2": "欲しい",

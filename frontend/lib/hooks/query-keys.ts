@@ -30,6 +30,7 @@ export const queryKeys = {
   aiStatus: ['ai-status'] as const,
   wishlist: ['wishlist'] as const,
   wishlistSuggestions: ['wishlist-suggestions'] as const,
+  seasonSwap: ['season-swap'] as const,
   preferences: ['preferences'] as const,
   family: ['family'] as const,
 

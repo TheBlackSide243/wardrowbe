@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {살 것} other {살 것 · #개}}",
     "total": "총 약 {total}"
   },
+  "price": {
+    "check": "가격 확인",
+    "dropped": "가격 인하",
+    "foundDrops": "{count, plural, other {#개 가격이 내려갔어요}}",
+    "noDrops": "아직 내려간 가격이 없어요"
+  },
   "priority": {
     "1": "꼭 필요",
     "2": "갖고 싶음",

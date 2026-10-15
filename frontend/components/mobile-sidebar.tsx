@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Home, Shirt, Sparkles, Layers, LayoutGrid, History, BarChart3, Brain, Settings, Users, Bell, HeartHandshake, Luggage, Recycle, ShoppingBag, Camera } from 'lucide-react';
+import { X, Home, Shirt, Sparkles, Layers, LayoutGrid, History, BarChart3, Brain, Settings, Users, Bell, HeartHandshake, Luggage, Recycle, ShoppingBag, Camera, CalendarRange, MessageCircleHeart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { AIStatusDot } from '@/components/ai-status-dot';
@@ -31,6 +31,8 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
     { name: t('declutter'), href: '/dashboard/declutter', icon: Recycle },
     { name: t('wishlist'), href: '/dashboard/wishlist', icon: ShoppingBag },
     { name: t('selfie'), href: '/dashboard/selfie', icon: Camera },
+    { name: t('season'), href: '/dashboard/season', icon: CalendarRange },
+    { name: t('stylist'), href: '/dashboard/stylist', icon: MessageCircleHeart },
   ];
 
   const secondaryNavigation = [

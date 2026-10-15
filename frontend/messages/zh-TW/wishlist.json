@@ -33,6 +33,12 @@
     "title": "{count, plural, =0 {要買的} other {要買的 · # 件}}",
     "total": "合計約 {total}"
   },
+  "price": {
+    "check": "檢查價格",
+    "dropped": "降價了",
+    "foundDrops": "{count, plural, other {# 件降價了}}",
+    "noDrops": "暫時沒有降價"
+  },
   "priority": {
     "1": "必需",
     "2": "想要",

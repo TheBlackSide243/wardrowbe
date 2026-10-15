@@ -19,6 +19,8 @@ import {
   Recycle,
   ShoppingBag,
   Camera,
+  CalendarRange,
+  MessageCircleHeart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -42,6 +44,8 @@ export function Sidebar() {
     { name: t('declutter'), href: '/dashboard/declutter', icon: Recycle },
     { name: t('wishlist'), href: '/dashboard/wishlist', icon: ShoppingBag },
     { name: t('selfie'), href: '/dashboard/selfie', icon: Camera },
+    { name: t('season'), href: '/dashboard/season', icon: CalendarRange },
+    { name: t('stylist'), href: '/dashboard/stylist', icon: MessageCircleHeart },
   ];
 
   const secondaryNavigation = [

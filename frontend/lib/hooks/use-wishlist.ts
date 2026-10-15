@@ -18,6 +18,9 @@ export interface WishlistEntry {
   item_type: string | null;
   priority: number;
   bought: boolean;
+  current_price: string | null;
+  price_checked_at: string | null;
+  price_dropped_at: string | null;
   created_at: string;
 }
 
