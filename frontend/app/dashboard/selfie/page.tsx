@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Camera, CheckCircle2, Circle, Loader2, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ACCEPTED_IMAGE_INPUT } from '@/lib/image-types';
 import { ApiError } from '@/lib/api';
 import { useLogWear } from '@/lib/hooks/use-items';
 import { useSelfieRecognition } from '@/lib/hooks/use-wishlist';
@@ -93,7 +94,7 @@ export default function SelfiePage() {
             )}
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_INPUT}
               className="hidden"
               onChange={(e) => {
                 choose(e.target.files?.[0] ?? null);

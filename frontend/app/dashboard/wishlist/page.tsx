@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ACCEPTED_IMAGE_INPUT } from '@/lib/image-types';
 import { ApiError, getErrorMessage } from '@/lib/api';
 import {
   useAddWishlistEntry,
@@ -124,7 +125,7 @@ function EntryCard({ entry }: { entry: WishlistEntry }) {
           <input
             ref={fileInput}
             type="file"
-            accept="image/*"
+            accept={ACCEPTED_IMAGE_INPUT}
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -220,7 +221,7 @@ function AddForm({ initialName }: { initialName: string }) {
         )}
         <input
           type="file"
-          accept="image/*"
+          accept={ACCEPTED_IMAGE_INPUT}
           className="hidden"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
