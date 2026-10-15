@@ -1,5 +1,15 @@
 {
   "aiLearning": "AI学習",
+  "aiStatus": {
+    "disabled": "AIオフ",
+    "missingDetail": "AIサーバーにありません：{models}",
+    "modelDetail": "モデル：{model}",
+    "model_missing": "AIモデルが見つかりません",
+    "offline": "AIオフライン",
+    "online": "AI稼働中",
+    "unknown": "AIの状態不明",
+    "unknownDetail": "AIサーバーを確認中"
+  },
   "analytics": "分析",
   "brandAlt": "wardrowbe",
   "brandName": "wardrowbe",
@@ -15,6 +25,7 @@
   "outfits": "コーデ",
   "packing": "荷造り",
   "pairings": "組み合わせ",
+  "selfie": "コーデ自撮り",
   "settings": "設定",
   "settingsSection": "設定",
   "signOut": "サインアウト",
@@ -22,5 +33,6 @@
   "suggestOutfit": "コーディネート提案",
   "toggleTheme": "テーマ切替",
   "userFallback": "ユーザー",
-  "wardrobe": "ワードローブ"
+  "wardrobe": "ワードローブ",
+  "wishlist": "買い物リスト"
 }

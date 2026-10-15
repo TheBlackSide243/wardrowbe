@@ -17,9 +17,12 @@ import {
   HeartHandshake,
   Luggage,
   Recycle,
+  ShoppingBag,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { AIStatusDot } from '@/components/ai-status-dot';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -37,6 +40,8 @@ export function Sidebar() {
     { name: t('aiLearning'), href: '/dashboard/learning', icon: Brain },
     { name: t('packing'), href: '/dashboard/packing', icon: Luggage },
     { name: t('declutter'), href: '/dashboard/declutter', icon: Recycle },
+    { name: t('wishlist'), href: '/dashboard/wishlist', icon: ShoppingBag },
+    { name: t('selfie'), href: '/dashboard/selfie', icon: Camera },
   ];
 
   const secondaryNavigation = [
@@ -111,6 +116,9 @@ export function Sidebar() {
                   );
                 })}
               </ul>
+            </li>
+            <li className="mt-auto">
+              <AIStatusDot />
             </li>
           </ul>
         </nav>

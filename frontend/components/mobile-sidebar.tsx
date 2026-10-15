@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Home, Shirt, Sparkles, Layers, LayoutGrid, History, BarChart3, Brain, Settings, Users, Bell, HeartHandshake, Luggage, Recycle } from 'lucide-react';
+import { X, Home, Shirt, Sparkles, Layers, LayoutGrid, History, BarChart3, Brain, Settings, Users, Bell, HeartHandshake, Luggage, Recycle, ShoppingBag, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { AIStatusDot } from '@/components/ai-status-dot';
 
 interface MobileSidebarProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
     { name: t('aiLearning'), href: '/dashboard/learning', icon: Brain },
     { name: t('packing'), href: '/dashboard/packing', icon: Luggage },
     { name: t('declutter'), href: '/dashboard/declutter', icon: Recycle },
+    { name: t('wishlist'), href: '/dashboard/wishlist', icon: ShoppingBag },
+    { name: t('selfie'), href: '/dashboard/selfie', icon: Camera },
   ];
 
   const secondaryNavigation = [
@@ -147,6 +150,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
               </li>
             </ul>
           </nav>
+          <AIStatusDot className="pt-4" />
         </div>
       </div>
     </div>

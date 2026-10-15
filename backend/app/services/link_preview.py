@@ -11,7 +11,7 @@ import socket
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from html.parser import HTMLParser
-from ipaddress import ip_address
+from ipaddress import IPv6Address, ip_address
 from urllib.parse import urljoin, urlsplit
 
 import httpx
@@ -166,7 +166,7 @@ async def ensure_public_host(host: str) -> None:
         raise PreviewError("This address cannot be found.") from None
     for info in infos:
         address = ip_address(info[4][0].split("%")[0])
-        if address.ipv4_mapped is not None:
+        if isinstance(address, IPv6Address) and address.ipv4_mapped is not None:
             address = address.ipv4_mapped
         if not address.is_global or address.is_multicast:
             raise PreviewError("Only public web pages can be read.")

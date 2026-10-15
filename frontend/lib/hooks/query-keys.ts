@@ -27,6 +27,9 @@ export const queryKeys = {
   weather: ['weather'] as const,
   declutter: (months: number) => ['declutter', months] as const,
   declutterAll: ['declutter'] as const,
+  aiStatus: ['ai-status'] as const,
+  wishlist: ['wishlist'] as const,
+  wishlistSuggestions: ['wishlist-suggestions'] as const,
   preferences: ['preferences'] as const,
   family: ['family'] as const,
 
