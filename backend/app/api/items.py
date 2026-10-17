@@ -2129,6 +2129,9 @@ async def delete_item_image(
             ItemPhotoView.item_id == item_id, ItemPhotoView.image_path == item_image.image_path
         )
     )
+    # Out of the loaded item too, so anything served from this session no longer lists it.
+    if item_image in item.additional_images:
+        item.additional_images.remove(item_image)
     await db.delete(item_image)
     await db.flush()
 
