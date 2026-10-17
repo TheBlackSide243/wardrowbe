@@ -7,7 +7,7 @@ from uuid import UUID
 from arq import create_pool
 from arq.jobs import Job
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from sqlalchemy import case, func, select, update
+from sqlalchemy import case, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,6 +19,7 @@ from app.models.item import (
     ClothingItem,
     ItemHistory,
     ItemImage,
+    ItemPhotoView,
     ItemStatus,
     ProcessingKind,
     TaggedBy,
@@ -27,6 +28,7 @@ from app.models.item import (
 from app.models.outfit import Outfit, OutfitItem
 from app.models.user import User
 from app.schemas.item import (
+    UNIQUE_PHOTO_VIEWS,
     USER_TAG_KEYS,
     AnalysisCompletion,
     AnalysisFailure,
@@ -45,6 +47,7 @@ from app.schemas.item import (
     BulkSelectionRequest,
     BulkUploadResponse,
     BulkUploadResult,
+    CategoryName,
     ItemCreate,
     ItemFilter,
     ItemImageResponse,
@@ -53,6 +56,8 @@ from app.schemas.item import (
     ItemUpdate,
     LogWashRequest,
     LogWearRequest,
+    PhotoViewName,
+    PhotoViewRequest,
     RemoveBackgroundRequest,
     ReorderImagesRequest,
     TaggingProgressResponse,
@@ -112,6 +117,9 @@ async def _resolve_bulk_item_ids(
     item_ids = await item_service.get_ids_by_filter(
         user_id=user_id,
         type_filter=filters.type if filters else None,
+        category=filters.category if filters else None,
+        favorite=filters.favorite if filters else None,
+        needs_wash=filters.needs_wash if filters else None,
         search=filters.search if filters else None,
         is_archived=filters.is_archived if filters and filters.is_archived is not None else False,
         excluded_ids=list(request.excluded_ids) if request.excluded_ids else None,
@@ -142,6 +150,7 @@ async def list_items(
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends()],
     type: str | None = None,
+    category: CategoryName | None = None,
     subtype: str | None = None,
     colors: str | None = None,
     status: str | None = None,
@@ -157,6 +166,7 @@ async def list_items(
 
     filters = ItemFilter(
         type=type,
+        category=category,
         subtype=subtype,
         colors=color_list,
         status=status,
@@ -211,6 +221,47 @@ async def _queue_upload_processing(
     )
 
 
+def _delete_item_files(image_service: ImageService, item: ClothingItem) -> None:
+    """Remove every file an item owns from storage: the cover with its sizes and backup, and
+    each additional photo."""
+    image_service.delete_images(
+        {
+            "image_path": item.image_path,
+            "medium_path": item.medium_path,
+            "thumbnail_path": item.thumbnail_path,
+            "original_backup_path": item.original_image_path,
+        }
+    )
+    for image in item.additional_images:
+        image_service.delete_images(
+            {
+                "image_path": image.image_path,
+                "medium_path": image.medium_path,
+                "thumbnail_path": image.thumbnail_path,
+            }
+        )
+
+
+async def _photo_views(db: AsyncSession, item_id: UUID) -> dict[str, str]:
+    rows = await db.execute(select(ItemPhotoView).where(ItemPhotoView.item_id == item_id))
+    return {row.image_path: row.view for row in rows.scalars()}
+
+
+async def _label_photo(
+    db: AsyncSession, item: ClothingItem, image_path: str, view: str | None
+) -> None:
+    """Set the view of one photo. Front and back belong to one photo at a time, so labelling a
+    second front takes the label off the first."""
+    clash = ItemPhotoView.image_path == image_path
+    if view in UNIQUE_PHOTO_VIEWS:
+        clash = clash | (ItemPhotoView.view == view)
+    await db.execute(delete(ItemPhotoView).where(ItemPhotoView.item_id == item.id, clash))
+    if view:
+        db.add(ItemPhotoView(item_id=item.id, image_path=image_path, view=view))
+    await db.flush()
+    await db.refresh(item, attribute_names=["photo_views"])
+
+
 @router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
 async def create_item(
     db: DbSession,
@@ -226,6 +277,7 @@ async def create_item(
     favorite: bool = Form(False),
     skip_ai: bool = Form(False),
     remove_background: bool = Form(False),
+    image_view: PhotoViewName | None = Form(None),
 ) -> ItemResponse:
     # Validate and process image
     image_service = ImageService()
@@ -288,6 +340,8 @@ async def create_item(
         item_data=item_data,
         image_paths=image_paths,
     )
+    if image_view:
+        await _label_photo(db, item, item.image_path, image_view)
 
     do_auto_tag = settings.effective_ai_vision_enabled and not skip_ai
 
@@ -575,14 +629,7 @@ async def bulk_delete_items(
                 failed += 1
                 continue
 
-            image_service.delete_images(
-                {
-                    "image_path": item.image_path,
-                    "medium_path": item.medium_path,
-                    "thumbnail_path": item.thumbnail_path,
-                    "original_backup_path": item.original_image_path,
-                }
-            )
+            _delete_item_files(image_service, item)
 
             await item_service.delete(item)
             deleted += 1
@@ -1336,15 +1383,7 @@ async def delete_item(
             detail="Item not found",
         )
 
-    image_service = ImageService()
-    image_service.delete_images(
-        {
-            "image_path": item.image_path,
-            "medium_path": item.medium_path,
-            "thumbnail_path": item.thumbnail_path,
-            "original_backup_path": item.original_image_path,
-        }
-    )
+    _delete_item_files(ImageService(), item)
 
     await item_service.delete(item)
 
@@ -1967,6 +2006,14 @@ async def replace_item_image(
     # Old files are removed only after the new paths are committed, so a failed
     # commit cannot leave the item pointing at deleted files
     image_service.delete_images(old_paths)
+    # The replaced photo's view label goes with it; the new photo starts unlabelled.
+    await db.execute(
+        delete(ItemPhotoView).where(
+            ItemPhotoView.item_id == item.id, ItemPhotoView.image_path == old_paths["image_path"]
+        )
+    )
+    await db.commit()
+    await db.refresh(item, attribute_names=["photo_views"])
 
     return ItemResponse.model_validate(item)
 
@@ -1979,6 +2026,7 @@ async def add_item_image(
     db: DbSession,
     current_user: Annotated[User, Depends(get_current_user)],
     image: UploadFile = File(...),
+    view: PhotoViewName | None = Form(None),
 ) -> ItemImageResponse:
     item_service = ItemService(db)
     item = await item_service.get_by_id(item_id, current_user.id)
@@ -1989,13 +2037,14 @@ async def add_item_image(
             detail="Item not found",
         )
 
-    # Check max images limit
+    # The cover counts towards the limit too
+    max_photos = get_settings().max_item_photos
     count_result = await db.execute(select(func.count()).where(ItemImage.item_id == item_id))
     current_count = count_result.scalar() or 0
-    if current_count >= 4:
+    if current_count + 1 >= max_photos:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum of 4 additional images per item",
+            detail=f"Maximum of {max_photos} photos per item",
         )
 
     # Process image
@@ -2031,6 +2080,9 @@ async def add_item_image(
     db.add(item_image)
     await db.flush()
     await db.refresh(item_image)
+    if view:
+        await _label_photo(db, item, item_image.image_path, view)
+    item_image.view = view
 
     return ItemImageResponse.model_validate(item_image)
 
@@ -2072,6 +2124,11 @@ async def delete_item_image(
         }
     )
 
+    await db.execute(
+        delete(ItemPhotoView).where(
+            ItemPhotoView.item_id == item_id, ItemPhotoView.image_path == item_image.image_path
+        )
+    )
     await db.delete(item_image)
     await db.flush()
 
@@ -2102,8 +2159,35 @@ async def reorder_item_images(
     await db.flush()
 
     # Return in new order
+    views = await _photo_views(db, item_id)
     ordered = sorted(images.values(), key=lambda x: x.position)
+    for img in ordered:
+        img.view = views.get(img.image_path)
     return [ItemImageResponse.model_validate(img) for img in ordered]
+
+
+@router.patch("/{item_id}/photo-view", response_model=ItemResponse)
+async def set_photo_view(
+    item_id: UUID,
+    request: PhotoViewRequest,
+    db: DbSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ItemResponse:
+    """Label one of the item's photos as its front, back, a detail or other; null clears it."""
+    item = await ItemService(db).get_by_id(item_id, current_user.id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    if request.image_id is None:
+        image_path = item.image_path
+    else:
+        image = next((img for img in item.additional_images if img.id == request.image_id), None)
+        if image is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        image_path = image.image_path
+
+    await _label_photo(db, item, image_path, request.view)
+    return ItemResponse.model_validate(item)
 
 
 @router.post("/{item_id}/images/{image_id}/set-primary", response_model=ItemResponse)

@@ -279,5 +279,42 @@
     "daysAgo": "Worn {days}d ago",
     "today": "Worn today",
     "yesterday": "Worn yesterday"
+  },
+  "photos": {
+    "title": "Photos",
+    "add": "Add photos",
+    "pickerHint": "Front, back and details: up to {count} photos. The first one is the cover.",
+    "limit": "Up to {count} photos per item.",
+    "invalid": "Some files are not supported images or are larger than 20 MB.",
+    "type": "What the photo shows",
+    "noView": "Not set",
+    "front": "Front",
+    "back": "Back",
+    "detail": "Detail",
+    "other": "Other",
+    "cover": "Cover photo",
+    "coverHint": "Cover",
+    "makeCover": "Use as cover",
+    "previous": "Previous",
+    "next": "Next",
+    "remove": "Remove photo",
+    "removeTitle": "Remove this photo?",
+    "removeDescription": "The photo is deleted for good. The item and its other photos stay.",
+    "keep": "Keep it",
+    "lastPhoto": "An item needs at least one photo. Replace it instead.",
+    "uploading": "{count, plural, one {Uploading # photo…} other {Uploading # photos…}}",
+    "count": "{count} of {max}",
+    "countShort": "{count, plural, one {# photo} other {# photos}}",
+    "counter": "Photo {current} of {total}",
+    "frontBack": "Front and back",
+    "showFront": "Show the front",
+    "showBack": "Show the back",
+    "showCover": "Show the cover",
+    "someFailed": "{count, plural, one {The item was saved, but # photo could not be uploaded.} other {The item was saved, but # photos could not be uploaded.}}",
+    "error": "The photo could not be saved. Try again."
+  },
+  "categories": {
+    "label": "Wardrobe sections",
+    "all": "All"
   }
 }

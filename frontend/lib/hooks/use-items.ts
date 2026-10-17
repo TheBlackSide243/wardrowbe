@@ -5,7 +5,7 @@ import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/rea
 import { useSession } from 'next-auth/react';
 import { api, API_BASE_PATH, getAccessToken, ApiError, NetworkError } from '@/lib/api';
 import { useSetTokenIfAvailable, applySessionToken } from '@/lib/hooks/use-session-token';
-import { Item, ItemListResponse, ItemFilter, WashHistoryEntry, ItemImage, TaggingProgress } from '@/lib/types';
+import { Item, ItemListResponse, ItemFilter, WashHistoryEntry, ItemImage, PhotoType, TaggingProgress } from '@/lib/types';
 import { chunkArray } from '@/lib/utils';
 import { enqueueFiles } from '@/lib/upload-queue';
 import { startDrain } from '@/lib/upload-manager';
@@ -32,6 +32,7 @@ function itemListQuery(filters: ItemFilter, page: number, pageSize: number) {
         page_size: String(pageSize),
       };
       if (filters.type) params.type = filters.type;
+      if (filters.category) params.category = filters.category;
       if (filters.colors?.length) params.colors = filters.colors.join(',');
       if (filters.search) params.search = filters.search;
       if (filters.favorite !== undefined) params.favorite = String(filters.favorite);
@@ -463,10 +464,11 @@ export function useAddItemImage() {
   const { data: session } = useSession();
 
   return useMutation({
-    mutationFn: async ({ itemId, file }: { itemId: string; file: File }) => {
+    mutationFn: async ({ itemId, file, view }: { itemId: string; file: File; view?: PhotoType | null }) => {
       const token = session?.accessToken || getAccessToken();
       const formData = new FormData();
       formData.append('image', file);
+      if (view) formData.append('view', view);
 
       const headers: Record<string, string> = {};
       if (token) {
@@ -501,6 +503,37 @@ export function useDeleteItemImage() {
     mutationFn: async ({ itemId, imageId }: { itemId: string; imageId: string }) => {
       applySessionToken(session);
       return api.delete(`/items/${itemId}/images/${imageId}`);
+    },
+    onSuccess: (_, variables) => {
+      invalidateItemCaches(queryClient, variables.itemId);
+    },
+  });
+}
+
+// Labels one photo as front, back, detail or other; imageId null is the cover photo.
+export function useSetPhotoView() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+
+  return useMutation({
+    mutationFn: async ({ itemId, imageId, view }: { itemId: string; imageId: string | null; view: PhotoType | null }) => {
+      applySessionToken(session);
+      return api.patch<Item>(`/items/${itemId}/photo-view`, { image_id: imageId, view });
+    },
+    onSuccess: (_, variables) => {
+      invalidateItemCaches(queryClient, variables.itemId);
+    },
+  });
+}
+
+export function useReorderItemImages() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+
+  return useMutation({
+    mutationFn: async ({ itemId, imageIds }: { itemId: string; imageIds: string[] }) => {
+      applySessionToken(session);
+      return api.patch<ItemImage[]>(`/items/${itemId}/images/reorder`, { image_ids: imageIds });
     },
     onSuccess: (_, variables) => {
       invalidateItemCaches(queryClient, variables.itemId);
@@ -635,6 +668,7 @@ export interface BulkOperationParams {
   // Filters to apply when using select_all (to match the current view)
   filters?: {
     type?: string;
+    category?: string;
     search?: string;
     needs_wash?: boolean;
     favorite?: boolean;

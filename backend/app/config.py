@@ -180,6 +180,9 @@ class Settings(BaseSettings):
     # walked in batches via the response cursor rather than rejected.
     max_bulk_action_count: int = Field(default=200, ge=1)
 
+    # Photos one item can have, the cover included (front, back, details...).
+    max_item_photos: int = Field(default=10, ge=1, le=30)
+
     # Background removal
     bg_removal_provider: str = Field(default="rembg")  # "rembg" or "http"
     bg_removal_model: str = Field(default="birefnet-general-lite")  # rembg model name

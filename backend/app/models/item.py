@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -167,6 +168,10 @@ class ClothingItem(Base):
         cascade="all, delete-orphan",
         order_by="ItemImage.position",
     )
+    # Loaded with the item wherever it is queried, so every ItemResponse can label its photos.
+    photo_views: Mapped[list["ItemPhotoView"]] = relationship(
+        "ItemPhotoView", cascade="all, delete-orphan", lazy="selectin", passive_deletes=True
+    )
 
 
 class ItemHistory(Base):
@@ -226,6 +231,36 @@ class ItemImage(Base):
 
     # Relationships
     item: Mapped["ClothingItem"] = relationship("ClothingItem", back_populates="additional_images")
+
+
+class PhotoView(enum.StrEnum):
+    front = "front"
+    back = "back"
+    detail = "detail"
+    other = "other"
+
+
+class ItemPhotoView(Base):
+    """What one of an item's photos shows (front, back, detail...).
+
+    Keyed by the photo's file rather than by item_images row, so the label follows the photo when
+    it becomes or stops being the cover (set-primary swaps paths), and a replaced photo simply
+    loses its label. A table of its own rather than a clothing_items column, like declutter_keeps,
+    so it never touches how items are written. Photos without a row have no view.
+    """
+
+    __tablename__ = "item_photo_views"
+    __table_args__ = (
+        CheckConstraint(
+            "view IN ('front', 'back', 'detail', 'other')", name="ck_item_photo_views_view"
+        ),
+    )
+
+    item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    image_path: Mapped[str] = mapped_column(String(500), primary_key=True)
+    view: Mapped[str] = mapped_column(String(10), nullable=False)
 
 
 class DeclutterKeep(Base):

@@ -279,5 +279,42 @@
     "daysAgo": "Indossato {days}g fa",
     "today": "Indossato oggi",
     "yesterday": "Indossato ieri"
+  },
+  "photos": {
+    "title": "Foto",
+    "add": "Aggiungi foto",
+    "pickerHint": "Fronte, retro e dettagli: fino a {count} foto. La prima è la copertina.",
+    "limit": "Fino a {count} foto per capo.",
+    "invalid": "Alcuni file non sono immagini supportate o superano i 20 MB.",
+    "type": "Cosa mostra la foto",
+    "noView": "Non indicato",
+    "front": "Fronte",
+    "back": "Retro",
+    "detail": "Dettaglio",
+    "other": "Altro",
+    "cover": "Foto di copertina",
+    "coverHint": "Copertina",
+    "makeCover": "Usa come copertina",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "remove": "Elimina foto",
+    "removeTitle": "Eliminare questa foto?",
+    "removeDescription": "La foto viene cancellata definitivamente. Il capo e le altre foto restano.",
+    "keep": "Tienila",
+    "lastPhoto": "Un capo deve avere almeno una foto. Sostituiscila invece.",
+    "uploading": "{count, plural, one {Caricamento di # foto…} other {Caricamento di # foto…}}",
+    "count": "{count} di {max}",
+    "countShort": "{count, plural, one {# foto} other {# foto}}",
+    "counter": "Foto {current} di {total}",
+    "frontBack": "Fronte e retro",
+    "showFront": "Mostra il fronte",
+    "showBack": "Mostra il retro",
+    "showCover": "Mostra la copertina",
+    "someFailed": "{count, plural, one {Il capo è stato salvato, ma # foto non è stata caricata.} other {Il capo è stato salvato, ma # foto non sono state caricate.}}",
+    "error": "Impossibile salvare la foto. Riprova."
+  },
+  "categories": {
+    "label": "Sezioni del guardaroba",
+    "all": "Tutto"
   }
 }
