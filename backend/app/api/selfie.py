@@ -13,9 +13,10 @@ from app.database import DbSession
 from app.models.item import ClothingItem, ItemStatus
 from app.models.user import User
 from app.schemas.item import ItemResponse
-from app.services.ai_service import AIDisabledError, get_ai_service
+from app.services.ai_service import AIDisabledError
 from app.services.image_service import ImageService
 from app.services.selfie_service import match_selfie
+from app.services.user_ai import ai_service_for
 from app.utils.auth import get_current_user
 from app.utils.uploads import UploadTooLargeError, read_upload_within_limit
 
@@ -47,7 +48,7 @@ async def recognise_outfit(
             detail="Invalid image file. Supported formats: JPEG, PNG, WebP, HEIC",
         )
     try:
-        ai = get_ai_service()
+        ai = await ai_service_for(db, current_user.id)
     except AIDisabledError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="The AI is turned off"

@@ -10,8 +10,9 @@ from app.database import DbSession
 from app.models.item import ClothingItem, ItemStatus
 from app.models.user import User
 from app.schemas.item import ItemResponse
-from app.services.ai_service import AIDisabledError, get_ai_service
+from app.services.ai_service import AIDisabledError
 from app.services.stylist_service import MAX_TURNS, ask_stylist
+from app.services.user_ai import ai_service_for
 from app.utils.auth import get_current_user
 from app.utils.timezone import get_user_today
 
@@ -46,7 +47,7 @@ async def chat_with_stylist(
             detail="The last message must come from the user",
         )
     try:
-        ai = get_ai_service()
+        ai = await ai_service_for(db, current_user.id)
     except AIDisabledError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="The AI is turned off"
