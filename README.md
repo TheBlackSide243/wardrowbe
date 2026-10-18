@@ -21,6 +21,7 @@
   <a href="#ai-configuration">AI</a> •
   <a href="#deployment">Deployment</a> •
   <a href="#configuration">Configuration</a> •
+  <a href="#self-hosted-and-cloud">Self-Hosted and Cloud</a> •
   <a href="#contributing">Contributing</a>
 </p>
 
@@ -529,6 +530,10 @@ docker stats
 </details>
 
 Still stuck? Check the [issues](https://github.com/Anyesh/wardrowbe/issues) and [discussions](https://github.com/Anyesh/wardrowbe/discussions), or open a new issue with the output of `docker compose ps`, the relevant logs, your `.env` with secrets redacted, and the steps to reproduce.
+
+## Self-Hosted and Cloud
+
+This repo is the self-hosted edition. [Wardrowbe Cloud](https://wardrowbe.com) shares the same core but has its own roadmap, so features differ and aren't ported 1:1; this README describes the self-hosted edition. Ideas and core fixes go back and forth between the two. Community contributions stay free and open here and never go behind a paywall. Want a cloud feature here, or have an idea? Please open an issue or discussion; if there's strong interest, we'll look into bringing it over. If you contribute here and are happy for it to go into Cloud too, say so in your PR. More in [this discussion](https://github.com/Anyesh/wardrowbe/discussions/267).
 
 ## Contributing
 
