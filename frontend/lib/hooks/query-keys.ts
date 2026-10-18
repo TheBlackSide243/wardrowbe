@@ -30,7 +30,8 @@ export const queryKeys = {
   aiStatus: ['ai-status'] as const,
   wishlist: ['wishlist'] as const,
   wishlistSuggestions: ['wishlist-suggestions'] as const,
-  seasonSwap: ['season-swap'] as const,
+  // Per account: another sign-in in the same tab never sees this one's clothes.
+  seasonSwap: (userId: string) => ['season-swap', userId] as const,
   preferences: ['preferences'] as const,
   family: ['family'] as const,
 
