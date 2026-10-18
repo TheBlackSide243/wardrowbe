@@ -1957,6 +1957,14 @@ async def remove_item_background(
             detail="Could not queue background removal",
         ) from None
     await db.commit()
+    # Same as the bulk action: the item's other photos get their own job, otherwise the back
+    # or a detail shot keeps its background after the user asked for the item to be cleaned.
+    photos = [
+        image
+        for image in item.additional_images
+        if not image.original_image_path and not _photo_busy(image)
+    ]
+    await _queue_photo_backgrounds(db, photos, request.bg_color)
     await db.refresh(
         item,
         attribute_names=[
