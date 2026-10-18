@@ -144,7 +144,7 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
           {t('count', { count: photos.length, max: maxPhotos })}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2">
         {photos.map((photo, index) => {
           const position = index - 1;
           return (
