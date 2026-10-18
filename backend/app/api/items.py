@@ -63,6 +63,7 @@ from app.schemas.item import (
     TaggingProgressResponse,
     WashHistoryResponse,
 )
+from app.services import background_removal
 from app.services.image_service import ImageService
 from app.services.item_service import ItemService
 from app.utils.auth import get_current_user
@@ -238,8 +239,65 @@ def _delete_item_files(image_service: ImageService, item: ClothingItem) -> None:
                 "image_path": image.image_path,
                 "medium_path": image.medium_path,
                 "thumbnail_path": image.thumbnail_path,
+                "original_backup_path": image.original_image_path,
             }
         )
+
+
+# A photo still "processing" after this long lost its job (worker restart, dropped queue entry)
+# and may be queued again.
+PHOTO_JOB_STALE_SECONDS = 900
+
+
+def _photo_busy(image: ItemImage) -> bool:
+    if image.status != "processing" or image.processing_started_at is None:
+        return False
+    return (
+        datetime.now(UTC) - image.processing_started_at
+    ).total_seconds() < PHOTO_JOB_STALE_SECONDS
+
+
+async def _queue_photo_backgrounds(
+    db: AsyncSession, images: list[ItemImage], bg_color: str, redis=None
+) -> int:
+    """Queue one background-removal job per photo. Returns how many were queued; a photo whose
+    job could not be queued is marked error so the user can retry it on its own."""
+    if not images:
+        return 0
+    started = datetime.now(UTC)
+    for image in images:
+        image.status = "processing"
+        image.processing_started_at = started
+    # Committed before enqueuing: the image worker reads the row on its own connection.
+    await db.commit()
+
+    own_pool = redis is None
+    queued = 0
+    try:
+        if own_pool:
+            redis = await create_pool(get_redis_settings())
+        for image in images:
+            try:
+                job = await redis.enqueue_job(
+                    "remove_photo_background_job", str(image.id), bg_color, _queue_name=IMAGE_QUEUE
+                )
+                if job is None:
+                    raise RuntimeError("enqueue_job returned None")
+                queued += 1
+            except Exception as e:
+                logger.error(f"Failed to queue background removal for photo {image.id}: {e}")
+                image.status = "error"
+                image.processing_started_at = None
+    except Exception as e:
+        logger.error(f"Failed to connect to the job queue for photo background removal: {e}")
+        for image in images:
+            image.status = "error"
+            image.processing_started_at = None
+    finally:
+        if own_pool and redis is not None:
+            await redis.aclose()
+    await db.commit()
+    return queued
 
 
 async def _photo_views(db: AsyncSession, item_id: UUID) -> dict[str, str]:
@@ -1092,11 +1150,22 @@ async def bulk_remove_background_items(
         if redis:
             await redis.aclose()
 
+    # The other photos of the same items, one job each: a removal that stopped at the cover
+    # would leave the back and the details with their background.
+    photos = [
+        image
+        for item in items_to_process
+        for image in item.additional_images
+        if not image.original_image_path and not _photo_busy(image)
+    ]
+    photos_queued = await _queue_photo_backgrounds(db, photos, request.bg_color)
+
     return BulkRemoveBackgroundResponse(
         queued=queued,
         failed=failed,
         skipped=skipped,
         already_done=already_done_count,
+        photos_queued=photos_queued,
         errors=errors,
         next_cursor=next_cursor,
         has_more=has_more,
@@ -1848,52 +1917,59 @@ async def remove_item_background(
             detail="Item has a background job in progress",
         )
 
-    recovering_from_error = (
-        item.status == ItemStatus.error
-        and item.processing_kind == ProcessingKind.background_removal
-    )
-
-    hex_color = request.bg_color.lstrip("#")
-    bg_color = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-
     try:
-        image_service = ImageService()
-        result = await asyncio.to_thread(image_service.remove_background, item.image_path, bg_color)
-        item.original_image_path = result["original_backup_path"]
-        if recovering_from_error:
-            item.status = ItemStatus.ready
-            item.processing_kind = None
-            item.ai_started_at = None
-        await db.commit()
-        await db.refresh(
-            item,
-            attribute_names=[
-                "original_image_path",
-                "status",
-                "processing_kind",
-                "ai_started_at",
-                "updated_at",
-            ],
-        )
-        return ItemResponse.model_validate(item)
-    except ImportError:
+        background_removal.get_provider()
+    except (ImportError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="Background removal provider not available. "
             "For rembg: pip install rembg[cpu]. "
             "For HTTP provider: set BG_REMOVAL_PROVIDER=http and BG_REMOVAL_URL.",
         ) from None
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from None
+
+    # The model runs in the image worker only. Running it here as well kept a second copy of it
+    # in the API process's memory for good; the worker frees its own after a while idle.
+    item.status = ItemStatus.processing
+    item.processing_kind = ProcessingKind.background_removal
+    item.ai_started_at = None
+    await db.commit()
+    try:
+        redis = await create_pool(get_redis_settings())
+        try:
+            job = await redis.enqueue_job(
+                "remove_item_background_job",
+                str(item.id),
+                request.bg_color,
+                _queue_name=IMAGE_QUEUE,
+            )
+        finally:
+            await redis.aclose()
+        if job is None:
+            raise RuntimeError("enqueue_job returned None")
+        item.ai_job_id = job.job_id
     except Exception as e:
-        logger.error(f"Failed to remove background: {e}")
+        logger.error(f"Failed to queue background removal for {item.id}: {e}")
+        # Kind stays background_removal so the card offers the right retry.
+        item.status = ItemStatus.error
+        await db.commit()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to remove background",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not queue background removal",
         ) from None
+    await db.commit()
+    await db.refresh(
+        item,
+        attribute_names=[
+            "original_image_path",
+            "status",
+            "processing_kind",
+            "ai_started_at",
+            "ai_job_id",
+            "image_path",
+            "updated_at",
+        ],
+    )
+    return ItemResponse.model_validate(item)
 
 
 @router.post("/{item_id}/restore-original", response_model=ItemResponse)
@@ -2027,6 +2103,7 @@ async def add_item_image(
     current_user: Annotated[User, Depends(get_current_user)],
     image: UploadFile = File(...),
     view: PhotoViewName | None = Form(None),
+    remove_background: bool = Form(False),
 ) -> ItemImageResponse:
     item_service = ItemService(db)
     item = await item_service.get_by_id(item_id, current_user.id)
@@ -2082,6 +2159,8 @@ async def add_item_image(
     await db.refresh(item_image)
     if view:
         await _label_photo(db, item, item_image.image_path, view)
+    if remove_background:
+        await _queue_photo_backgrounds(db, [item_image], UPLOAD_BACKGROUND)
     item_image.view = view
 
     return ItemImageResponse.model_validate(item_image)
@@ -2121,6 +2200,7 @@ async def delete_item_image(
             "image_path": item_image.image_path,
             "medium_path": item_image.medium_path,
             "thumbnail_path": item_image.thumbnail_path,
+            "original_backup_path": item_image.original_image_path,
         }
     )
 
@@ -2167,6 +2247,75 @@ async def reorder_item_images(
     for img in ordered:
         img.view = views.get(img.image_path)
     return [ItemImageResponse.model_validate(img) for img in ordered]
+
+
+async def _owned_photo(
+    db: AsyncSession, item_id: UUID, image_id: UUID, user_id: UUID
+) -> tuple[ClothingItem, ItemImage]:
+    item = await ItemService(db).get_by_id(item_id, user_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    image = next((img for img in item.additional_images if img.id == image_id), None)
+    if image is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    return item, image
+
+
+@router.post("/{item_id}/images/{image_id}/remove-background", response_model=ItemImageResponse)
+async def remove_photo_background(
+    item_id: UUID,
+    image_id: UUID,
+    db: DbSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+    request: RemoveBackgroundRequest | None = None,
+) -> ItemImageResponse:
+    """Queue background removal for one additional photo; the cover has its own endpoint."""
+    _, image = await _owned_photo(db, item_id, image_id, current_user.id)
+    if _photo_busy(image):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This photo is already being processed"
+        )
+    try:
+        background_removal.get_provider()
+    except (ImportError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Background removal provider not available",
+        ) from None
+    bg_color = request.bg_color if request else UPLOAD_BACKGROUND
+    await _queue_photo_backgrounds(db, [image], bg_color)
+    image.view = (await _photo_views(db, item_id)).get(image.image_path)
+    return ItemImageResponse.model_validate(image)
+
+
+@router.post("/{item_id}/images/{image_id}/restore-original", response_model=ItemImageResponse)
+async def restore_photo_original(
+    item_id: UUID,
+    image_id: UUID,
+    db: DbSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ItemImageResponse:
+    """Undo background removal on one additional photo."""
+    _, image = await _owned_photo(db, item_id, image_id, current_user.id)
+    if _photo_busy(image):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This photo is still being processed"
+        )
+    if not image.original_image_path:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="This photo has no original to restore"
+        )
+    try:
+        await asyncio.to_thread(
+            ImageService().restore_original, image.image_path, image.original_image_path
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+    image.original_image_path = None
+    image.status = "ready"
+    await db.commit()
+    image.view = (await _photo_views(db, item_id)).get(image.image_path)
+    return ItemImageResponse.model_validate(image)
 
 
 @router.patch("/{item_id}/photo-view", response_model=ItemResponse)
@@ -2220,20 +2369,31 @@ async def set_primary_image(
             detail="Image not found",
         )
 
-    # Swap paths: current primary -> additional, additional -> primary
+    # A job writing either photo would land on the wrong one after the swap.
+    if _photo_busy(item_image) or (item.status == ItemStatus.processing and item.ai_job_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A photo of this item is still being processed",
+        )
+
+    # Swap paths: current primary -> additional, additional -> primary. Each photo keeps its own
+    # background-removal backup, so undo restores the right picture.
     old_primary = {
         "image_path": item.image_path,
         "thumbnail_path": item.thumbnail_path,
         "medium_path": item.medium_path,
+        "original_image_path": item.original_image_path,
     }
 
     item.image_path = item_image.image_path
     item.thumbnail_path = item_image.thumbnail_path
     item.medium_path = item_image.medium_path
+    item.original_image_path = item_image.original_image_path
 
     item_image.image_path = old_primary["image_path"]
     item_image.thumbnail_path = old_primary["thumbnail_path"]
     item_image.medium_path = old_primary["medium_path"]
+    item_image.original_image_path = old_primary["original_image_path"]
 
     await db.flush()
     await db.refresh(item)

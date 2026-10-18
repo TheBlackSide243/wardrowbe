@@ -311,7 +311,11 @@
     "showBack": "Voir le dos",
     "showCover": "Voir la couverture",
     "someFailed": "{count, plural, one {Le vêtement est enregistré, mais # photo n'a pas pu être envoyée.} other {Le vêtement est enregistré, mais # photos n'ont pas pu être envoyées.}}",
-    "error": "Impossible d'enregistrer la photo. Réessaie."
+    "error": "Impossible d'enregistrer la photo. Réessaie.",
+    "removingBackground": "Suppression du fond…",
+    "backgroundFailed": "Échec de la suppression du fond",
+    "removeBackground": "Supprimer le fond",
+    "restoreBackground": "Restaurer l'original"
   },
   "categories": {
     "label": "Sections de la garde-robe",

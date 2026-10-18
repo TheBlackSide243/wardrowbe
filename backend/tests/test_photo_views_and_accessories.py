@@ -1,6 +1,7 @@
 from functools import partial
 from io import BytesIO
 from unittest.mock import patch
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
@@ -268,3 +269,145 @@ class TestSelectAllKeepsFilters:
 
         left = (await client.get("/api/v1/items", headers=auth_headers)).json()["items"]
         assert [i["id"] for i in left] == [jeans["id"]]
+
+
+def _redis_pool():
+    from unittest.mock import AsyncMock, MagicMock
+
+    job = MagicMock()
+    job.job_id = "photo-job"
+    pool = AsyncMock()
+    pool.enqueue_job.return_value = job
+    return pool
+
+
+class TestBackgroundRemovalOnEveryPhoto:
+    @pytest.mark.asyncio
+    async def test_each_added_photo_gets_its_own_job(
+        self, client: AsyncClient, auth_headers, storage
+    ):
+        from unittest.mock import AsyncMock
+
+        item = await _create(client, auth_headers, 40, image_view="front")
+        pool = _redis_pool()
+        with patch("app.api.items.create_pool", AsyncMock(return_value=pool)):
+            first = await client.post(
+                f"/api/v1/items/{item['id']}/images",
+                files={"image": ("b.jpg", _image_bytes(41), "image/jpeg")},
+                data={"view": "back", "remove_background": "true"},
+                headers=auth_headers,
+            )
+            second = await client.post(
+                f"/api/v1/items/{item['id']}/images",
+                files={"image": ("d.jpg", _image_bytes(42), "image/jpeg")},
+                data={"view": "detail", "remove_background": "true"},
+                headers=auth_headers,
+            )
+        assert first.json()["status"] == "processing"
+        assert second.json()["status"] == "processing"
+        calls = [c.args for c in pool.enqueue_job.call_args_list]
+        assert calls == [
+            ("remove_photo_background_job", first.json()["id"], "#FFFFFF"),
+            ("remove_photo_background_job", second.json()["id"], "#FFFFFF"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_the_job_cleans_one_photo_and_a_failure_stays_on_it(
+        self, client: AsyncClient, auth_headers, storage, db_session
+    ):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from PIL import Image as PILImage
+
+        from app.models.item import ItemImage
+        from app.workers.background_removal import remove_photo_background_job
+
+        item = await _create(client, auth_headers, 43)
+        good = (await _add_photo(client, auth_headers, item["id"], 44, view="back")).json()
+        bad = (await _add_photo(client, auth_headers, item["id"], 45, view="detail")).json()
+
+        ok = MagicMock()
+        ok.remove.side_effect = lambda img: PILImage.new("RGBA", img.size, (0, 0, 255, 255))
+        broken = MagicMock()
+        broken.remove.side_effect = RuntimeError("model missing")
+        worker_patches = (
+            patch("app.workers.background_removal.get_db_session", return_value=db_session),
+            patch.object(db_session, "close", AsyncMock()),
+            patch(
+                "app.workers.background_removal.ImageService",
+                partial(ImageService, storage_path=str(storage)),
+            ),
+        )
+        with worker_patches[0], worker_patches[1], worker_patches[2]:
+            with patch("app.services.background_removal.get_provider", return_value=ok):
+                assert (await remove_photo_background_job({}, good["id"], "#FFFFFF"))[
+                    "status"
+                ] == "success"
+            with patch("app.services.background_removal.get_provider", return_value=broken):
+                assert (await remove_photo_background_job({}, bad["id"], "#FFFFFF"))[
+                    "status"
+                ] == "error"
+
+        db_session.expire_all()
+        cleaned = await db_session.get(ItemImage, UUID(good["id"]))
+        failed = await db_session.get(ItemImage, UUID(bad["id"]))
+        assert cleaned.status == "ready"
+        assert cleaned.original_image_path and (storage / cleaned.original_image_path).exists()
+        assert failed.status == "error"
+        assert failed.original_image_path is None
+        # The cover was never touched by either job.
+        cover = await _get(client, auth_headers, item["id"])
+        assert cover["original_image_path"] is None
+
+        resp = await client.post(
+            f"/api/v1/items/{item['id']}/images/{good['id']}/restore-original",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["original_image_path"] is None
+        assert resp.json()["view"] == "back"
+
+    @pytest.mark.asyncio
+    async def test_bulk_removal_includes_the_other_photos(
+        self, client: AsyncClient, auth_headers, storage
+    ):
+        from unittest.mock import AsyncMock
+
+        item = await _create(client, auth_headers, 46)
+        await _add_photo(client, auth_headers, item["id"], 47, view="back")
+        await _add_photo(client, auth_headers, item["id"], 48, view="detail")
+        pool = _redis_pool()
+        with patch("app.api.items.create_pool", AsyncMock(return_value=pool)):
+            resp = await client.post(
+                "/api/v1/items/bulk/remove-background",
+                json={"item_ids": [item["id"]]},
+                headers=auth_headers,
+            )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["queued"] == 1
+        assert resp.json()["photos_queued"] == 2
+        names = [c.args[0] for c in pool.enqueue_job.call_args_list]
+        assert names.count("remove_item_background_job") == 1
+        assert names.count("remove_photo_background_job") == 2
+
+    @pytest.mark.asyncio
+    async def test_a_photo_being_processed_cannot_become_the_cover(
+        self, client: AsyncClient, auth_headers, storage
+    ):
+        from unittest.mock import AsyncMock
+
+        item = await _create(client, auth_headers, 49)
+        pool = _redis_pool()
+        with patch("app.api.items.create_pool", AsyncMock(return_value=pool)):
+            photo = (
+                await client.post(
+                    f"/api/v1/items/{item['id']}/images",
+                    files={"image": ("b.jpg", _image_bytes(50), "image/jpeg")},
+                    data={"remove_background": "true"},
+                    headers=auth_headers,
+                )
+            ).json()
+        resp = await client.post(
+            f"/api/v1/items/{item['id']}/images/{photo['id']}/set-primary", headers=auth_headers
+        )
+        assert resp.status_code == 409

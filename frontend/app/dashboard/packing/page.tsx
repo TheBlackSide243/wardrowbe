@@ -142,7 +142,7 @@ function PlanView({ plan, laundry }: { plan: PackingPlan; laundry: boolean }) {
                             src={item.thumbnail_url}
                             alt={item.name || typeLabel(item.type)}
                             fill
-                            className="object-cover"
+                            className="garment-fit"
                             sizes="160px"
                           />
                         )}

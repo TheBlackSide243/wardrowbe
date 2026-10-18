@@ -181,7 +181,7 @@ function ItemCard({ item }: { item: { id: string; name: string | null; type: str
             src={item.thumbnail_url}
             alt={item.name || typeLabel(item.type)}
             fill
-            className="object-cover"
+            className="garment-fit"
             sizes="48px"
           />
         ) : (

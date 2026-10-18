@@ -311,7 +311,11 @@
     "showBack": "Show the back",
     "showCover": "Show the cover",
     "someFailed": "{count, plural, one {The item was saved, but # photo could not be uploaded.} other {The item was saved, but # photos could not be uploaded.}}",
-    "error": "The photo could not be saved. Try again."
+    "error": "The photo could not be saved. Try again.",
+    "removingBackground": "Removing background…",
+    "backgroundFailed": "Background removal failed",
+    "removeBackground": "Remove background",
+    "restoreBackground": "Restore original"
   },
   "categories": {
     "label": "Wardrobe sections",

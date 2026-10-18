@@ -386,6 +386,8 @@ class BulkRemoveBackgroundResponse(BulkBatchResponse):
     failed: int
     skipped: int = 0
     already_done: int = 0
+    # The items' other photos, each queued as its own job next to the cover.
+    photos_queued: int = 0
     errors: list[str] = Field(default_factory=list)
 
 
@@ -399,6 +401,9 @@ class ItemImageResponse(BaseModel):
     medium_path: str | None = None
     position: int
     view: PhotoViewName | None = None
+    # Background removal runs per photo, so each one reports its own state.
+    status: Literal["ready", "processing", "error"] = "ready"
+    original_image_path: str | None = None
     created_at: datetime
 
     @computed_field

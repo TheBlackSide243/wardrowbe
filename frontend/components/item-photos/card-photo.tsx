@@ -34,7 +34,7 @@ export function CardPhoto({ item, alt }: { item: Item; alt: string }) {
         alt={alt}
         fill
         className={cn(
-          'object-cover transition-opacity duration-300',
+          'garment-fit transition-opacity duration-300',
           other && (flipped ? 'opacity-0' : '[@media(hover:hover)]:group-hover:opacity-0')
         )}
         sizes={CARD_SIZES}
@@ -46,7 +46,7 @@ export function CardPhoto({ item, alt }: { item: Item; alt: string }) {
           aria-hidden="true"
           fill
           className={cn(
-            'object-cover transition-opacity duration-300',
+            'garment-fit transition-opacity duration-300',
             flipped ? 'opacity-100' : 'opacity-0 [@media(hover:hover)]:group-hover:opacity-100'
           )}
           sizes={CARD_SIZES}

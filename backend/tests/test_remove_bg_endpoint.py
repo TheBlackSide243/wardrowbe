@@ -23,6 +23,27 @@ def _jpeg_bytes(size: tuple[int, int] = (400, 600)) -> bytes:
     return buf.getvalue()
 
 
+def _inline_queue(db_session):
+    """Stands in for redis + the image worker: the queued removal runs right away."""
+    from unittest.mock import AsyncMock
+
+    from app.workers.background_removal import remove_item_background_job
+
+    async def enqueue(name, item_id, color, *args, **kwargs):
+        with (
+            patch("app.workers.background_removal.get_db_session", return_value=db_session),
+            patch.object(db_session, "close", AsyncMock()),
+        ):
+            await remove_item_background_job({}, item_id, color)
+        job = MagicMock()
+        job.job_id = "inline-job"
+        return job
+
+    pool = AsyncMock()
+    pool.enqueue_job.side_effect = enqueue
+    return patch("app.api.items.create_pool", AsyncMock(return_value=pool))
+
+
 def _mock_provider():
     provider = MagicMock()
     provider.remove.side_effect = lambda img: Image.new("RGBA", img.size, (*BLUE, 255))
@@ -132,7 +153,10 @@ class TestRemoveBackgroundEndpoint:
         )
         item_id = item.id
 
-        with patch("app.services.background_removal.get_provider", return_value=_mock_provider()):
+        with (
+            patch("app.services.background_removal.get_provider", return_value=_mock_provider()),
+            _inline_queue(db_session),
+        ):
             response = await client.post(
                 f"/api/v1/items/{item_id}/remove-background",
                 json={},
@@ -153,7 +177,10 @@ class TestRemoveBackgroundEndpoint:
             ai_job_id=None,
         )
 
-        with patch("app.services.background_removal.get_provider", return_value=_mock_provider()):
+        with (
+            patch("app.services.background_removal.get_provider", return_value=_mock_provider()),
+            _inline_queue(db_session),
+        ):
             response = await client.post(
                 f"/api/v1/items/{item.id}/remove-background",
                 json={},
@@ -173,7 +200,10 @@ class TestRemoveBackgroundEndpoint:
         )
         item_id = item.id
 
-        with patch("app.services.background_removal.get_provider", return_value=_mock_provider()):
+        with (
+            patch("app.services.background_removal.get_provider", return_value=_mock_provider()),
+            _inline_queue(db_session),
+        ):
             response = await client.post(
                 f"/api/v1/items/{item_id}/remove-background",
                 json={},
@@ -197,7 +227,10 @@ class TestRemoveBackgroundEndpoint:
         item = await _make_item(db_session, test_user, status=ItemStatus.ready)
         item_id = item.id
 
-        with patch("app.services.background_removal.get_provider", return_value=_mock_provider()):
+        with (
+            patch("app.services.background_removal.get_provider", return_value=_mock_provider()),
+            _inline_queue(db_session),
+        ):
             response = await client.post(
                 f"/api/v1/items/{item_id}/remove-background",
                 json={},

@@ -68,7 +68,7 @@ function EntryCard({ entry }: { entry: WishlistEntry }) {
             <img
               src={entry.photo_url}
               alt={entry.name}
-              className="h-full w-full object-cover"
+              className="h-full w-full garment-fit"
               referrerPolicy="no-referrer"
             />
           ) : (
@@ -229,7 +229,7 @@ function AddForm({ initialName }: { initialName: string }) {
       <label className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed bg-muted text-muted-foreground">
         {shownImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- local preview or a shop picture
-          <img src={shownImage} alt={name || t('form.photo')} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+          <img src={shownImage} alt={name || t('form.photo')} className="h-full w-full garment-fit" referrerPolicy="no-referrer" />
         ) : (
           <span className="flex flex-col items-center gap-1 text-xs">
             <ImagePlus className="h-6 w-6" />

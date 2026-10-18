@@ -311,7 +311,11 @@
     "showBack": "Mostra il retro",
     "showCover": "Mostra la copertina",
     "someFailed": "{count, plural, one {Il capo è stato salvato, ma # foto non è stata caricata.} other {Il capo è stato salvato, ma # foto non sono state caricate.}}",
-    "error": "Impossibile salvare la foto. Riprova."
+    "error": "Impossibile salvare la foto. Riprova.",
+    "removingBackground": "Rimozione sfondo…",
+    "backgroundFailed": "Rimozione sfondo non riuscita",
+    "removeBackground": "Rimuovi sfondo",
+    "restoreBackground": "Ripristina originale"
   },
   "categories": {
     "label": "Sezioni del guardaroba",

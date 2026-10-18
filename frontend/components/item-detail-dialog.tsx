@@ -151,6 +151,12 @@ export function ItemDetailDialog({ item, open, onOpenChange }: ItemDetailDialogP
   const [showWashHistory, setShowWashHistory] = useState(false);
   const [showWearHistory, setShowWearHistory] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const wasProcessing = useRef(false);
+  useEffect(() => {
+    const processing = item?.status === 'processing';
+    if (wasProcessing.current && !processing) setImageKey((k) => k + 1);
+    wasProcessing.current = processing;
+  }, [item?.status]);
 
   const updateItem = useUpdateItem();
   const deleteItem = useDeleteItem();
@@ -271,9 +277,9 @@ export function ItemDetailDialog({ item, open, onOpenChange }: ItemDetailDialogP
 
   const handleRemoveBackground = async () => {
     try {
+      // Queued on the image worker; the photo refreshes when the item stops processing.
       await removeBackground.mutateAsync({ id: item.id });
-      setImageKey((k) => k + 1);
-      toast.success(t('actions.backgroundRemoved'));
+      toast.success(tw('ai.removeBackgroundQueued'));
     } catch (error) {
       console.error('Failed to remove background:', error);
       toast.error(t('actions.backgroundRemoveError'));
@@ -304,6 +310,7 @@ export function ItemDetailDialog({ item, open, onOpenChange }: ItemDetailDialogP
   };
 
   const isAnalyzing = reanalyzeItem.isPending || item.status === 'processing';
+  const isRemovingBackground = item.status === 'processing' && item.processing_kind === 'background_removal';
 
   // Use signed URL from backend for better quality in detail view
   const imageUrl = item.image_url || item.image_path;
@@ -527,7 +534,9 @@ export function ItemDetailDialog({ item, open, onOpenChange }: ItemDetailDialogP
                   isAnalyzing ? (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
                       <Loader2 className="h-8 w-8 text-white animate-spin" />
-                      <span className="text-white text-sm font-medium">{t('view.aiAnalyzing')}</span>
+                      <span className="text-white text-sm font-medium">
+                        {isRemovingBackground ? tw('ai.removingBackground') : t('view.aiAnalyzing')}
+                      </span>
                     </div>
                   ) : null
                 }
@@ -868,7 +877,7 @@ export function ItemDetailDialog({ item, open, onOpenChange }: ItemDetailDialogP
                                             alt={oi.name || typeLabel(oi.type)}
                                             width={20}
                                             height={20}
-                                            className="object-cover w-full h-full"
+                                            className="garment-fit w-full h-full"
                                           />
                                         )}
                                       </div>

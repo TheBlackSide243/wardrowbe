@@ -52,7 +52,7 @@ function CandidateCard({ candidate, months }: { candidate: DeclutterCandidate; m
           className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted"
         >
           {item.thumbnail_url && (
-            <Image src={item.thumbnail_url} alt={label} fill className="object-cover" sizes="96px" />
+            <Image src={item.thumbnail_url} alt={label} fill className="garment-fit" sizes="96px" />
           )}
         </Link>
         <div className="min-w-0 flex-1 space-y-2">

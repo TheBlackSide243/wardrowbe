@@ -311,7 +311,11 @@
     "showBack": "裏を表示",
     "showCover": "カバーを表示",
     "someFailed": "{count, plural, other {アイテムは保存されましたが、#枚の写真をアップロードできませんでした。}}",
-    "error": "写真を保存できませんでした。もう一度お試しください。"
+    "error": "写真を保存できませんでした。もう一度お試しください。",
+    "removingBackground": "背景を削除中…",
+    "backgroundFailed": "背景の削除に失敗しました",
+    "removeBackground": "背景を削除",
+    "restoreBackground": "元に戻す"
   },
   "categories": {
     "label": "ワードローブの区分",

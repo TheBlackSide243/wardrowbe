@@ -148,7 +148,7 @@ export function ItemGallery({
                 idx === index ? 'border-primary' : 'border-transparent hover:border-primary/40'
               )}
             >
-              <Image src={photo.thumb || photo.src} alt="" fill className="object-cover" sizes="56px" />
+              <Image src={photo.thumb || photo.src} alt="" fill className="garment-fit" sizes="56px" />
               {photo.view && (
                 <span className="absolute inset-x-0 bottom-0 truncate bg-background/85 px-0.5 text-center text-[9px] font-medium text-primary">
                   {viewLabel(photo.view)}

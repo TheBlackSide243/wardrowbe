@@ -273,6 +273,9 @@ export interface ItemImage {
   medium_path?: string;
   position: number;
   view?: PhotoType | null;
+  // Background removal runs per photo, so each one has its own state and backup.
+  status?: 'ready' | 'processing' | 'error';
+  original_image_path?: string | null;
   created_at: string;
   image_url: string;
   thumbnail_url?: string;

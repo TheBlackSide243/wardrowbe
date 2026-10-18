@@ -311,7 +311,11 @@
     "showBack": "Rückseite zeigen",
     "showCover": "Titelbild zeigen",
     "someFailed": "{count, plural, one {Das Teil wurde gespeichert, aber # Foto konnte nicht hochgeladen werden.} other {Das Teil wurde gespeichert, aber # Fotos konnten nicht hochgeladen werden.}}",
-    "error": "Das Foto konnte nicht gespeichert werden. Versuch es noch einmal."
+    "error": "Das Foto konnte nicht gespeichert werden. Versuch es noch einmal.",
+    "removingBackground": "Hintergrund wird entfernt…",
+    "backgroundFailed": "Hintergrundentfernung fehlgeschlagen",
+    "removeBackground": "Hintergrund entfernen",
+    "restoreBackground": "Original wiederherstellen"
   },
   "categories": {
     "label": "Bereiche des Kleiderschranks",

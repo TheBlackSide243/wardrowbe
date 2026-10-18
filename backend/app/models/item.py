@@ -216,6 +216,9 @@ class WashHistory(Base):
 
 class ItemImage(Base):
     __tablename__ = "item_images"
+    __table_args__ = (
+        CheckConstraint("status IN ('ready', 'processing', 'error')", name="ck_item_images_status"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     item_id: Mapped[uuid.UUID] = mapped_column(
@@ -226,6 +229,11 @@ class ItemImage(Base):
     thumbnail_path: Mapped[str | None] = mapped_column(String(500))
     medium_path: Mapped[str | None] = mapped_column(String(500))
     position: Mapped[int] = mapped_column(Integer, default=0)
+    # Each photo has its own background removal: its own state and its own untouched original,
+    # so one failing photo never touches the others or the cover.
+    status: Mapped[str] = mapped_column(String(12), default="ready", server_default="ready")
+    original_image_path: Mapped[str | None] = mapped_column(String(500))
+    processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

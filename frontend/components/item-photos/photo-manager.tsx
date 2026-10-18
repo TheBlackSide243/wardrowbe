@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, ImagePlus, Loader2, Star, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Eraser, ImagePlus, Loader2, Star, Trash2, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -20,12 +20,15 @@ import { getErrorMessage } from '@/lib/api';
 import {
   useAddItemImage,
   useDeleteItemImage,
+  useRemovePhotoBackground,
+  useRestorePhotoOriginal,
   useReorderItemImages,
   useSetPhotoView,
   useSetPrimaryImage,
 } from '@/lib/hooks/use-items';
 import { usePhotoTypeLabel } from '@/lib/hooks/use-translated-constants';
 import { ACCEPTED_IMAGE_INPUT } from '@/lib/image-types';
+import { readRemoveBackground } from '@/lib/remove-background-pref';
 import { PHOTO_TYPES, type Item, type PhotoType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +44,8 @@ interface ManagedPhoto {
   imageId: string | null;
   src: string;
   view: PhotoType | null;
+  status: 'ready' | 'processing' | 'error';
+  hasOriginal: boolean;
 }
 
 // Edit-mode photo list for an item: label each photo, pick the cover, reorder, delete, add more.
@@ -52,13 +57,28 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
   const setPrimary = useSetPrimaryImage();
   const reorder = useReorderItemImages();
   const setView = useSetPhotoView();
+  const removePhotoBackground = useRemovePhotoBackground();
+  const restorePhotoOriginal = useRestorePhotoOriginal();
   const [uploading, setUploading] = useState(0);
   const [toDelete, setToDelete] = useState<ManagedPhoto | null>(null);
 
   const extras = item.additional_images ?? [];
   const photos: ManagedPhoto[] = [
-    { imageId: null, src: item.thumbnail_url || item.image_url || item.image_path, view: item.image_view ?? null },
-    ...extras.map((img) => ({ imageId: img.id, src: img.thumbnail_url || img.image_url, view: img.view ?? null })),
+    {
+      imageId: null,
+      src: item.thumbnail_url || item.image_url || item.image_path,
+      view: item.image_view ?? null,
+      status: item.status === 'processing' && item.processing_kind === 'background_removal' ? 'processing' : 'ready',
+      hasOriginal: !!item.original_image_path,
+    },
+    ...extras.map((img) => ({
+      imageId: img.id,
+      // Removal rewrites the file in place, so a cleaned photo gets its own URL in the cache.
+      src: `${img.thumbnail_url || img.image_url}${img.status === 'ready' && img.original_image_path ? '&bg=1' : ''}`,
+      view: img.view ?? null,
+      status: img.status ?? 'ready',
+      hasOriginal: !!img.original_image_path,
+    })),
   ];
   const busy =
     uploading > 0 ||
@@ -66,7 +86,9 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
     deleteImage.isPending ||
     setPrimary.isPending ||
     reorder.isPending ||
-    setView.isPending;
+    setView.isPending ||
+    removePhotoBackground.isPending ||
+    restorePhotoOriginal.isPending;
   const room = maxPhotos - photos.length;
 
   const fail = (error: unknown) => toast.error(getErrorMessage(error, t('error')));
@@ -75,12 +97,14 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
     const accepted = files.slice(0, Math.max(0, room));
     if (files.length > accepted.length) toast.warning(t('limit', { count: maxPhotos }));
     const taken = photos.map((photo) => photo.view);
+    // Same choice as the upload dialog: each new photo gets its own background removal.
+    const removeBackground = readRemoveBackground();
     setUploading(accepted.length);
     for (const file of accepted) {
       const view = nextFreeView(taken);
       taken.push(view);
       try {
-        await addImage.mutateAsync({ itemId: item.id, file, view });
+        await addImage.mutateAsync({ itemId: item.id, file, view, removeBackground });
       } catch (error) {
         fail(error);
       } finally {
@@ -132,7 +156,19 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
               )}
             >
               <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
-                <Image src={photo.src} alt={photo.view ? viewLabel(photo.view) : ''} fill className="object-cover" sizes="160px" />
+                <Image src={photo.src} alt={photo.view ? viewLabel(photo.view) : ''} fill className="garment-fit" sizes="160px" />
+                {photo.status === 'processing' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-[10px] font-medium text-white">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('removingBackground')}
+                  </div>
+                )}
+                {photo.status === 'error' && (
+                  <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
+                    <AlertCircle className="h-2.5 w-2.5" />
+                    {t('backgroundFailed')}
+                  </span>
+                )}
                 {index === 0 && (
                   <span className="absolute left-1 top-1 inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                     <Star className="h-2.5 w-2.5 fill-current" />
@@ -174,6 +210,37 @@ export function PhotoManager({ item, maxPhotos = 10 }: { item: Item; maxPhotos?:
                     >
                       <Star className="h-4 w-4" />
                     </Button>
+                    {photo.hasOriginal ? (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        disabled={busy || photo.status === 'processing'}
+                        aria-label={t('restoreBackground')}
+                        title={t('restoreBackground')}
+                        onClick={() =>
+                          restorePhotoOriginal.mutate({ itemId: item.id, imageId: photo.imageId! }, { onError: fail })
+                        }
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        disabled={busy || photo.status === 'processing'}
+                        aria-label={t('removeBackground')}
+                        title={t('removeBackground')}
+                        onClick={() =>
+                          removePhotoBackground.mutate({ itemId: item.id, imageId: photo.imageId! }, { onError: fail })
+                        }
+                      >
+                        <Eraser className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       size="icon"

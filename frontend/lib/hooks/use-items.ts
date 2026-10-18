@@ -45,7 +45,7 @@ function itemListQuery(filters: ItemFilter, page: number, pageSize: number) {
       return api.get<ItemListResponse>('/items', { params });
     },
     refetchInterval: (query: { state: { data: ItemListResponse | undefined } }) =>
-      processingPollInterval(!!query.state.data?.items?.some((item) => item.status === 'processing')),
+      processingPollInterval(!!query.state.data?.items?.some(isProcessing)),
     // Tagging runs server-side in the worker, so it keeps going while the tab is
     // hidden. Without this the polling stops and the UI looks frozen, which reads
     // as "analysis stopped when I switched tabs".
@@ -120,7 +120,14 @@ export function useItem(itemId: string) {
     queryKey: queryKeys.item(itemId),
     queryFn: () => api.get<Item>(`/items/${itemId}`),
     enabled: !!itemId && status !== 'loading',
+    refetchInterval: (query: { state: { data: Item | undefined } }) =>
+      processingPollInterval(!!query.state.data && isProcessing(query.state.data)),
   });
+}
+
+// The item or any of its photos still has work in the image worker or the AI queue.
+export function isProcessing(item: Item): boolean {
+  return item.status === 'processing' || (item.additional_images ?? []).some((img) => img.status === 'processing');
 }
 
 export function useCreateItem() {
@@ -464,11 +471,22 @@ export function useAddItemImage() {
   const { data: session } = useSession();
 
   return useMutation({
-    mutationFn: async ({ itemId, file, view }: { itemId: string; file: File; view?: PhotoType | null }) => {
+    mutationFn: async ({
+      itemId,
+      file,
+      view,
+      removeBackground,
+    }: {
+      itemId: string;
+      file: File;
+      view?: PhotoType | null;
+      removeBackground?: boolean;
+    }) => {
       const token = session?.accessToken || getAccessToken();
       const formData = new FormData();
       formData.append('image', file);
       if (view) formData.append('view', view);
+      if (removeBackground) formData.append('remove_background', 'true');
 
       const headers: Record<string, string> = {};
       if (token) {
@@ -519,6 +537,37 @@ export function useSetPhotoView() {
     mutationFn: async ({ itemId, imageId, view }: { itemId: string; imageId: string | null; view: PhotoType | null }) => {
       applySessionToken(session);
       return api.patch<Item>(`/items/${itemId}/photo-view`, { image_id: imageId, view });
+    },
+    onSuccess: (_, variables) => {
+      invalidateItemCaches(queryClient, variables.itemId);
+    },
+  });
+}
+
+// Background removal on one additional photo (queued on the image worker), and its undo.
+export function useRemovePhotoBackground() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+
+  return useMutation({
+    mutationFn: async ({ itemId, imageId }: { itemId: string; imageId: string }) => {
+      applySessionToken(session);
+      return api.post<ItemImage>(`/items/${itemId}/images/${imageId}/remove-background`, { bg_color: '#FFFFFF' });
+    },
+    onSuccess: (_, variables) => {
+      invalidateItemCaches(queryClient, variables.itemId);
+    },
+  });
+}
+
+export function useRestorePhotoOriginal() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+
+  return useMutation({
+    mutationFn: async ({ itemId, imageId }: { itemId: string; imageId: string }) => {
+      applySessionToken(session);
+      return api.post<ItemImage>(`/items/${itemId}/images/${imageId}/restore-original`);
     },
     onSuccess: (_, variables) => {
       invalidateItemCaches(queryClient, variables.itemId);

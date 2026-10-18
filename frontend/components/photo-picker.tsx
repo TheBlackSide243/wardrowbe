@@ -122,7 +122,7 @@ export function PhotoPicker({
             >
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-                <img src={photo.preview} alt={photo.file.name} className="aspect-square w-full rounded-md bg-muted object-cover" />
+                <img src={photo.preview} alt={photo.file.name} className="aspect-square w-full rounded-md bg-muted garment-fit" />
                 {chooseCover && index === 0 && (
                   <span className="absolute left-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                     {t('cover')}

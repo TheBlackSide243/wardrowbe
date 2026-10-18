@@ -40,6 +40,7 @@ import { useClothingColors } from '@/lib/hooks/use-translated-constants';
 import { CategoryTypeSelect } from '@/components/item-photos/category-type-select';
 import { PhotoPicker, type DraftPhoto } from '@/components/photo-picker';
 import type { Item } from '@/lib/types';
+import { readRemoveBackground, storeRemoveBackground } from '@/lib/remove-background-pref';
 import { ACCEPTED_IMAGE_TYPES } from '@/lib/image-types';
 import { useTranslations } from 'next-intl';
 
@@ -52,25 +53,6 @@ interface FileWithPreview {
   file: File;
   preview: string;
   id: string;
-}
-
-const REMOVE_BACKGROUND_KEY = 'wardrowbe.removeBackground';
-
-// Remembered per browser; on by default so new photos come out clean.
-function readRemoveBackground(): boolean {
-  try {
-    return window.localStorage.getItem(REMOVE_BACKGROUND_KEY) !== 'false';
-  } catch {
-    return true;
-  }
-}
-
-function storeRemoveBackground(value: boolean): void {
-  try {
-    window.localStorage.setItem(REMOVE_BACKGROUND_KEY, String(value));
-  } catch {
-    // Private mode or blocked storage: the choice just isn't remembered.
-  }
 }
 
 function RemoveBackgroundOption({
@@ -185,7 +167,12 @@ export function AddItemDialog({ open, onOpenChange }: AddItemDialogProps) {
     let failed = 0;
     for (const photo of rest) {
       try {
-        await addImage.mutateAsync({ itemId: created.id, file: photo.file, view: photo.type });
+        await addImage.mutateAsync({
+          itemId: created.id,
+          file: photo.file,
+          view: photo.type,
+          removeBackground,
+        });
       } catch (error) {
         console.error('Failed to add photo:', error);
         failed += 1;
@@ -455,7 +442,7 @@ export function AddItemDialog({ open, onOpenChange }: AddItemDialogProps) {
                             <img
                               src={f.preview}
                               alt={f.file.name}
-                              className="w-full aspect-square object-cover rounded-md"
+                              className="w-full aspect-square garment-fit rounded-md"
                             />
                             <Button
                               type="button"

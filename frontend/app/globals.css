@@ -78,6 +78,16 @@
   }
 }
 
+@layer components {
+  /* Every photo of a garment: the whole piece stays visible (trouser legs, sleeves, long
+     dresses and coats), centred and undistorted, with empty space around it rather than a
+     crop. Used instead of object-cover wherever an item photo is shown. */
+  .garment-fit {
+    object-fit: contain;
+    object-position: center;
+  }
+}
+
 /* Prevent iOS Safari zoom on input focus (requires 16px minimum) */
 @media screen and (max-width: 768px) {
   input, textarea, select {

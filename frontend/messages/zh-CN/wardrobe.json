@@ -311,7 +311,11 @@
     "showBack": "显示背面",
     "showCover": "显示封面",
     "someFailed": "{count, plural, other {衣物已保存，但有 # 张照片未能上传。}}",
-    "error": "无法保存照片，请重试。"
+    "error": "无法保存照片，请重试。",
+    "removingBackground": "正在去除背景…",
+    "backgroundFailed": "去除背景失败",
+    "removeBackground": "去除背景",
+    "restoreBackground": "恢复原图"
   },
   "categories": {
     "label": "衣橱分区",

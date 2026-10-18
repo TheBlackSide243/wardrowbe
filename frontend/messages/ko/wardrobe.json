@@ -311,7 +311,11 @@
     "showBack": "뒷면 보기",
     "showCover": "대표 사진 보기",
     "someFailed": "{count, plural, other {아이템은 저장했지만 사진 #장을 업로드하지 못했어요.}}",
-    "error": "사진을 저장하지 못했어요. 다시 시도하세요."
+    "error": "사진을 저장하지 못했어요. 다시 시도하세요.",
+    "removingBackground": "배경 제거 중…",
+    "backgroundFailed": "배경 제거 실패",
+    "removeBackground": "배경 제거",
+    "restoreBackground": "원본 복원"
   },
   "categories": {
     "label": "옷장 구분",
