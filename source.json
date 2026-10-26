@@ -1,0 +1,48 @@
+{
+  "name": "Wardrowbe",
+  "identifier": "io.github.theblackside243.wardrowbe",
+  "subtitle": "The iPhone app for your own Wardrowbe server",
+  "description": "An unofficial iPhone app for Wardrowbe (github.com/Anyesh/wardrowbe): it connects to your own server, whose address you pick at first launch.",
+  "iconURL": "https://raw.githubusercontent.com/TheBlackSide243/wardrowbe/feather/icon.png",
+  "website": "https://github.com/TheBlackSide243/wardrowbe/releases",
+  "tintColor": "#EC4899",
+  "apps": [
+    {
+      "name": "Wardrowbe",
+      "bundleIdentifier": "com.local.wardrowbe",
+      "developerName": "TheBlackSide243",
+      "subtitle": "Your wardrobe, on your own server",
+      "localizedDescription": "The Wardrowbe site full screen, sharing photos from other apps, a widget with today's outfit and the weather (with an \"I wore it\" button from iOS 17), photos without their background, shortcuts to Selfie and What to buy. It connects to your own Wardrowbe server.",
+      "iconURL": "https://raw.githubusercontent.com/TheBlackSide243/wardrowbe/feather/icon.png",
+      "tintColor": "#EC4899",
+      "category": "lifestyle",
+      "versions": [
+        {
+          "version": "1.2.0",
+          "buildVersion": "4",
+          "date": "2026-10-15",
+          "localizedDescription": "\"I wore it\" button in the widget, photos without background, Selfie and What to buy shortcuts.",
+          "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.2.0/Wardrowbe-1.2.0-unsigned.ipa",
+          "size": 274890,
+          "minOSVersion": "16.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Per fotografare i capi da aggiungere al guardaroba.",
+          "NSLocalNetworkUsageDescription": "Per collegarsi al server Wardrowbe sulla tua rete di casa.",
+          "NSLocationWhenInUseUsageDescription": "Per suggerire outfit in base al meteo dove ti trovi.",
+          "NSPhotoLibraryAddUsageDescription": "Per salvare le immagini del guardaroba nelle tue foto.",
+          "NSPhotoLibraryUsageDescription": "Per scegliere le foto dei capi da aggiungere al guardaroba."
+        }
+      },
+      "version": "1.2.0",
+      "versionDate": "2026-10-15",
+      "versionDescription": "\"I wore it\" button in the widget, photos without background, Selfie and What to buy shortcuts.",
+      "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.2.0/Wardrowbe-1.2.0-unsigned.ipa",
+      "size": 274890
+    }
+  ],
+  "news": []
+}
