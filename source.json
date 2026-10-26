@@ -5,7 +5,7 @@
   "description": "An unofficial iPhone app for Wardrowbe (github.com/Anyesh/wardrowbe): it connects to your own server, whose address you pick at first launch.",
   "iconURL": "https://raw.githubusercontent.com/TheBlackSide243/wardrowbe/feather/icon.png",
   "website": "https://github.com/TheBlackSide243/wardrowbe/releases",
-  "tintColor": "#EC4899",
+  "tintColor": "EC4899",
   "apps": [
     {
       "name": "Wardrowbe",
@@ -14,13 +14,13 @@
       "subtitle": "Your wardrobe, on your own server",
       "localizedDescription": "The Wardrowbe site full screen, sharing photos from other apps, a widget with today's outfit and the weather (with an \"I wore it\" button from iOS 17), photos without their background, shortcuts to Selfie and What to buy. It connects to your own Wardrowbe server.",
       "iconURL": "https://raw.githubusercontent.com/TheBlackSide243/wardrowbe/feather/icon.png",
-      "tintColor": "#EC4899",
+      "tintColor": "EC4899",
       "category": "lifestyle",
       "versions": [
         {
           "version": "1.2.0",
           "buildVersion": "4",
-          "date": "2026-10-15",
+          "date": "2026-10-15T10:32:00Z",
           "localizedDescription": "\"I wore it\" button in the widget, photos without background, Selfie and What to buy shortcuts.",
           "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.2.0/Wardrowbe-1.2.0-unsigned.ipa",
           "size": 274890,
@@ -38,7 +38,7 @@
         }
       },
       "version": "1.2.0",
-      "versionDate": "2026-10-15",
+      "versionDate": "2026-10-15T10:32:00Z",
       "versionDescription": "\"I wore it\" button in the widget, photos without background, Selfie and What to buy shortcuts.",
       "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.2.0/Wardrowbe-1.2.0-unsigned.ipa",
       "size": 274890
