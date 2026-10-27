@@ -14,6 +14,12 @@
       "tintColor": "EC4899",
       "versions": [
         {
+          "version": "1.3.0",
+          "date": "2026-10-27T22:25:03Z",
+          "size": 265917,
+          "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.3.0/Wardrowbe-1.3.0-unsigned.ipa"
+        },
+        {
           "version": "1.2.0",
           "date": "2026-10-15T10:32:00Z",
           "size": 274890,
@@ -21,10 +27,10 @@
         }
       ],
       "appPermissions": {},
-      "version": "1.2.0",
-      "versionDate": "2026-10-15T10:32:00Z",
-      "size": 274890,
-      "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.2.0/Wardrowbe-1.2.0-unsigned.ipa"
+      "version": "1.3.0",
+      "versionDate": "2026-10-27T22:25:03Z",
+      "size": 265917,
+      "downloadURL": "https://github.com/TheBlackSide243/wardrowbe/releases/download/ios-1.3.0/Wardrowbe-1.3.0-unsigned.ipa"
     }
   ],
   "news": []
