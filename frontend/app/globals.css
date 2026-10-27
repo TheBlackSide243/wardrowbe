@@ -112,6 +112,10 @@ html {
 body:not(:has(.app-shell)) {
   padding: var(--sat) var(--sar) var(--sab) var(--sal);
 }
+/* Their full-height layouts fill what is left, so a centred login does not scroll. */
+body:not(:has(.app-shell)) .min-h-screen {
+  min-height: calc(100vh - var(--sat) - var(--sab));
+}
 .app-shell {
   padding-left: var(--sal);
   padding-right: var(--sar);

@@ -92,7 +92,7 @@ export function BulkActionToolbar({
   const totalPages = pagination ? Math.ceil(totalItems / pagination.pageSize) : 0;
 
   return (
-    <div className="above-nav fixed bottom-[calc(5rem+var(--sab))] sm:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 bg-background border rounded-lg shadow-lg px-2 sm:px-4 py-2 sm:py-3 max-w-[calc(100vw-1rem)]">
+    <div className="above-nav fixed bottom-[calc(5rem+var(--sab))] lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 bg-background border rounded-lg shadow-lg px-2 sm:px-4 py-2 sm:py-3 max-w-[calc(100vw-1rem)]">
       {/* Select All Checkbox */}
       <div
         className="flex items-center gap-1 sm:gap-2 cursor-pointer shrink-0"
