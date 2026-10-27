@@ -117,16 +117,17 @@ body:not(:has(.app-shell)) {
   padding-right: var(--sar);
 }
 
-/* Tabs on the right (components/mobile-nav.tsx): on a screen wider than it is tall and narrower
-   than the desktop layout (a phone on its side, a foldable's wide screen) the bottom bar would
-   take height the page does not have to spare, and the right edge, where the thumb holding the
-   phone is, has nothing on it. Last in the file, so it wins over the bottom bar's utilities. */
-@media (min-aspect-ratio: 1/1) and (max-width: 1023px) {
-  .app-shell {
+/* Tabs on the right (body.nav-side from components/mobile-nav.tsx): on a screen wider than it is
+   tall (a phone on its side, a foldable's wide screen), or one whose right edge is the system's
+   status column, the bottom bar would take height the page does not have to spare, and the right
+   edge, where the thumb holding the phone is, has nothing on it. Below the desktop layout only.
+   Last in the file, so it wins over the bottom bar's utilities. */
+@media (max-width: 1023px) {
+  body.nav-side .app-shell {
     --rail: calc(76px + var(--sar));
     padding-right: var(--rail);
   }
-  .mobile-nav {
+  body.nav-side .mobile-nav {
     left: auto;
     top: 0;
     width: var(--rail);
@@ -134,38 +135,40 @@ body:not(:has(.app-shell)) {
     border-left: 1px solid hsl(var(--border));
     padding: calc(var(--sat) + 8px) var(--sar) calc(var(--sab) + 8px) 0;
   }
-  .mobile-nav > .mobile-nav-tabs {
+  body.nav-side .mobile-nav > .mobile-nav-tabs {
     height: 100%;
     flex-direction: column;
     justify-content: center;
     gap: 4px;
   }
-  .app-main {
+  body.nav-side .app-main {
     padding-bottom: calc(1.5rem + var(--sab));
   }
-  .upload-queue {
+  body.nav-side .upload-queue {
     right: calc(var(--rail) + 1rem);
     bottom: 1rem;
   }
-  /* The right edge is the system's own column, the time and the battery at its top (the iPhone
-     Duo closed, body.nav-status from mobile-nav.tsx): the tabs fill that column, below the
-     status block instead of beside it, and the page gets the width back. */
-  body.nav-status .app-shell {
+  /* The right edge is the system's own column, the time, the battery and the Wi-Fi at its top
+     (the iPhone Duo closed, body.nav-status): the tabs fill that column, below the status block
+     (about 160px tall there) instead of beside it, and the page gets the width back. */
+  body.nav-side.nav-status .app-shell {
     --rail: max(84px, var(--sar));
   }
-  body.nav-status .mobile-nav {
-    padding: max(calc(var(--sat) + 8px), 160px) 0 calc(var(--sab) + 8px) 0;
+  body.nav-side.nav-status .mobile-nav {
+    border-left: 0;
+    padding: max(calc(var(--sat) + 8px), 176px) 0 calc(var(--sab) + 8px) 0;
   }
-  body.nav-status .mobile-nav > .mobile-nav-tabs {
+  body.nav-side.nav-status .mobile-nav > .mobile-nav-tabs {
     justify-content: flex-start;
+    gap: 12px;
   }
 }
 /* A phone on its side is short: the icons alone, so every tab fits the height. */
-@media (min-aspect-ratio: 1/1) and (max-width: 1023px) and (max-height: 480px) {
-  .mobile-nav > .mobile-nav-tabs {
+@media (max-width: 1023px) and (max-height: 480px) {
+  body.nav-side .mobile-nav > .mobile-nav-tabs {
     gap: 0;
   }
-  .mobile-nav > .mobile-nav-tabs span {
+  body.nav-side .mobile-nav > .mobile-nav-tabs span {
     display: none;
   }
 }
