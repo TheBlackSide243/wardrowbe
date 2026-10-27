@@ -99,3 +99,73 @@
 html {
   touch-action: manipulation;
 }
+
+/* Safe areas (the page draws edge to edge, viewportFit 'cover' in app/layout.tsx): the notch or
+   status bar on top, the home bar below, a camera or the system's status column at the sides. */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+/* Pages outside the dashboard (login, setup, onboarding) simply keep clear of all four. */
+body:not(:has(.app-shell)) {
+  padding: var(--sat) var(--sar) var(--sab) var(--sal);
+}
+.app-shell {
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+/* Tabs on the right (components/mobile-nav.tsx): on a screen wider than it is tall and narrower
+   than the desktop layout (a phone on its side, a foldable's wide screen) the bottom bar would
+   take height the page does not have to spare, and the right edge, where the thumb holding the
+   phone is, has nothing on it. Last in the file, so it wins over the bottom bar's utilities. */
+@media (min-aspect-ratio: 1/1) and (max-width: 1023px) {
+  .app-shell {
+    --rail: calc(76px + var(--sar));
+    padding-right: var(--rail);
+  }
+  .mobile-nav {
+    left: auto;
+    top: 0;
+    width: var(--rail);
+    border-top: 0;
+    border-left: 1px solid hsl(var(--border));
+    padding: calc(var(--sat) + 8px) var(--sar) calc(var(--sab) + 8px) 0;
+  }
+  .mobile-nav > .mobile-nav-tabs {
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .app-main {
+    padding-bottom: calc(1.5rem + var(--sab));
+  }
+  .upload-queue {
+    right: calc(var(--rail) + 1rem);
+    bottom: 1rem;
+  }
+  /* The right edge is the system's own column, the time and the battery at its top (the iPhone
+     Duo closed, body.nav-status from mobile-nav.tsx): the tabs fill that column, below the
+     status block instead of beside it, and the page gets the width back. */
+  body.nav-status .app-shell {
+    --rail: max(84px, var(--sar));
+  }
+  body.nav-status .mobile-nav {
+    padding: max(calc(var(--sat) + 8px), 160px) 0 calc(var(--sab) + 8px) 0;
+  }
+  body.nav-status .mobile-nav > .mobile-nav-tabs {
+    justify-content: flex-start;
+  }
+}
+/* A phone on its side is short: the icons alone, so every tab fits the height. */
+@media (min-aspect-ratio: 1/1) and (max-width: 1023px) and (max-height: 480px) {
+  .mobile-nav > .mobile-nav-tabs {
+    gap: 0;
+  }
+  .mobile-nav > .mobile-nav-tabs span {
+    display: none;
+  }
+}

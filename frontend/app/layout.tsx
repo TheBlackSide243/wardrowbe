@@ -32,6 +32,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // The page draws edge to edge and keeps clear of the notch, the home bar and a side status
+  // column itself (globals.css --sat/--sar/--sab/--sal).
+  viewportFit: 'cover',
 };
 
 export default async function RootLayout({

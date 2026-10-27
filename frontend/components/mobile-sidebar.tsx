@@ -70,14 +70,14 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
       {/* Sidebar panel */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-card transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-72 bg-card pt-[var(--sat)] pl-[var(--sal)] box-content transition-transform duration-300 ease-in-out',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Close button */}
         <button
           type="button"
-          className="absolute right-4 top-4 p-2 text-muted-foreground hover:text-foreground"
+          className="absolute right-4 top-[calc(1rem+var(--sat))] p-2 text-muted-foreground hover:text-foreground"
           onClick={onClose}
         >
           <span className="sr-only">{t('closeSidebar')}</span>

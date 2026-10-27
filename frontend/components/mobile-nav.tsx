@@ -1,14 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Shirt, Sparkles, LayoutGrid, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { statusColumn, useRightInset } from '@/lib/nav-side';
 import { useTranslations } from 'next-intl';
 
 export function MobileNav() {
   const pathname = usePathname();
   const t = useTranslations('nav');
+  const inStatusColumn = statusColumn(useRightInset());
+
+  useEffect(() => {
+    document.body.classList.toggle('nav-status', inStatusColumn);
+    return () => document.body.classList.remove('nav-status');
+  }, [inStatusColumn]);
 
   const navigation = [
     { name: t('dashboard'), href: '/dashboard', icon: Home },
@@ -19,8 +27,8 @@ export function MobileNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background lg:hidden">
-      <div className="flex h-16 items-center justify-around">
+    <nav className="mobile-nav fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[var(--sab)] lg:hidden">
+      <div className="mobile-nav-tabs flex h-16 items-center justify-around">
         {navigation.map((item) => {
           const isActive = item.href === '/dashboard'
             ? pathname === '/dashboard'
