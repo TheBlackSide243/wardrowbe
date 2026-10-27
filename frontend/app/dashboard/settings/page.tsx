@@ -564,7 +564,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Account Section */}
         <Card>
           <CardHeader>
@@ -655,7 +655,7 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={handleGetCurrentLocation}
@@ -1218,7 +1218,7 @@ export default function SettingsPage() {
                 ))}
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 className="flex-1"
