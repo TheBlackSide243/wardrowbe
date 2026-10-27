@@ -76,7 +76,7 @@ export function UploadQueueIndicator() {
   const anyRetryable = state.terminalRecords.some((record) => record.retryable);
 
   return (
-    <div className="upload-queue fixed bottom-20 right-4 lg:bottom-4 z-50 w-full max-w-xs">
+    <div className="upload-queue fixed bottom-[calc(5rem+var(--sab))] right-4 lg:bottom-4 z-50 w-full max-w-xs">
       <div className="rounded-lg border bg-card p-3 shadow-lg space-y-2">
         {state.remaining > 0 && (
           <div className="flex items-center gap-2">
